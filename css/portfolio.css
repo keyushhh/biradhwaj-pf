@@ -1,0 +1,249 @@
+/* =====================================================================
+   PORTFOLIO LAYER
+
+   kage.css is left exactly as authored. Everything the portfolio content
+   needs that the temple content did not is collected here, loaded after it,
+   and wins on source order at equal specificity. Keeping the two apart means
+   the reference layer stays readable and every deviation from it is in one
+   place.
+   ===================================================================== */
+
+/* ------------------------------------------------------------ small parts */
+/* Stands in for the authored .jp label slots. Same metrics, minus the
+   Japanese face — the scene can be a Kyoto temple, but the labels on someone's
+   own projects should not be in a language they are not writing in. */
+.tag{
+  font-size:11px; letter-spacing:.28em; text-transform:uppercase;
+  color:rgba(223,231,224,.62);
+}
+
+/* The preloader mark's second line is a monogram now, not a Japanese title,
+   so it takes ordinary tracking rather than the .5em a two-glyph word needed. */
+.pre-jp{ letter-spacing:.34em; font-size:11px; }
+
+/* =============================================================== hero
+   The B hero hides each chip's label and shows only its numeral, which reads
+   as a chapter index — right for five chapters of a story, useless for a
+   portfolio, where the figure means nothing without the thing it counts. The
+   labels come back and the block widens to pay for them. */
+body[data-layout-hero="b"] .hero-foot{ width:min(820px,62vw); }
+body[data-layout-hero="b"] .chapters{ gap:clamp(14px,2vw,30px); }
+body[data-layout-hero="b"] .chip{ flex-direction:column; gap:7px; }
+body[data-layout-hero="b"] .chip .num{ font-size:clamp(21px,2.2vw,34px); }
+body[data-layout-hero="b"] .chip .tx{
+  position:static; width:auto; height:auto; overflow:visible;
+  clip:auto; clip-path:none; white-space:normal; padding-top:0;
+}
+/* 22ch of an 11px face is about 120px, which is narrower than the column the
+   chip actually gets — the copy was wrapping early against a limit set for a
+   four-across strip of hidden labels. */
+body[data-layout-hero="b"] .chip p{ max-width:none; }
+
+/* The right-hand spine. In B this is display type at up to 54px, sized for
+   three Japanese glyphs; a 23-character job title at that size is taller than
+   the frame, so it drops to a tracked caption. */
+body[data-layout-hero="b"] .hero-side .v{
+  font-size:clamp(10px,.92vw,13px); letter-spacing:.44em;
+  color:rgba(223,231,224,.44);
+  /* a job title is long enough to find the foot of a short frame and break
+     into a second column beside itself */
+  white-space:nowrap;
+}
+
+/* the floating window carries a portrait now, so it stands up rather than
+   sitting letterbox, and it has no play affordance to offer */
+.peek-fr{
+  aspect-ratio:4 / 5;
+  background:
+    linear-gradient(180deg, rgba(3,6,9,.02) 30%, rgba(3,6,9,.52) 100%),
+    url('../assets/work/portrait.jpg') center 22% / cover no-repeat;
+}
+/* The caption held one short romanization beside one short gloss and could sit
+   them on a baseline together. A name and a job title are each longer than
+   half of a 166px window, so side by side both wrapped — the name to two lines
+   and the title to three. They stack. */
+.peek-cap{ flex-direction:column; align-items:flex-start; gap:3px; }
+.peek-cap b{ letter-spacing:.06em; white-space:nowrap; }
+.peek-cap i{ letter-spacing:.18em; }
+body[data-layout-hero="b"] .peek{ width:clamp(150px,14vw,222px); }
+
+/* =============================================================== about
+   The work history sits under the figures: three roles, ruled, in the same
+   grammar as the chapter list further down the page. */
+.roles{ margin-top:clamp(36px,6vh,68px); }
+.roles h4{
+  margin:0 0 14px; font-size:10px; font-weight:500; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--muted);
+}
+.roles ol{ list-style:none; margin:0; padding:0; border-top:1px solid var(--line-soft); }
+.roles li{
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;
+  gap:clamp(14px,2.4vw,40px); align-items:baseline;
+  padding:15px 0; border-bottom:1px solid var(--line-soft);
+}
+.roles li b{ font-size:15px; font-weight:400; color:var(--bone); text-shadow:0 1px 16px rgba(3,6,8,.92); }
+.roles li b .paren{ color:var(--muted); }
+.roles li span{ font-size:13px; color:#909b95; text-shadow:0 1px 16px rgba(3,6,8,.92); }
+.roles li i{
+  font-style:normal; font-size:11px; letter-spacing:.14em; color:#8b958f;
+  font-variant-numeric:tabular-nums; text-shadow:0 1px 16px rgba(3,6,8,.92);
+}
+
+/* ================================================================ work
+   Four projects rather than three, so the mosaic grows a row: the lead window
+   still spans the whole left column and the field notes stack beside it.
+   .card-fr is a link now, which needs a block box to keep its aspect ratio. */
+.card-fr{ display:block; }
+
+body[data-layout-gallery="b"] .cards{ grid-template-rows:repeat(3,minmax(0,1fr)) auto; }
+body[data-layout-gallery="b"] .card:first-child{ grid-row:1 / 4; }
+/* three cards share what two used to, so the floor comes down or the small
+   rows fight the lead card's fixed height and win */
+body[data-layout-gallery="b"] .card:not(:first-child) .card-fr{ min-height:120px; }
+/* the fifth plate runs the full width under the mosaic. A placeholder given
+   one of the four equal slots would read as a project; given the banner it
+   reads as the next one, which is what it is. */
+body[data-layout-gallery="b"] .card--soon{ grid-column:1 / -1; }
+body[data-layout-gallery="b"] .card--soon .card-fr{
+  flex:0 0 auto; height:clamp(170px,21vh,250px); min-height:0;
+}
+
+/* The placeholder has no screenshot to hang, so it stays a live window on to
+   the scene with a hairline round it — no cloth, because the shader keys off a
+   background image and there is deliberately none here. */
+.card--soon .card-fr{ outline-color:rgba(223,231,224,.22); background:none; }
+.card--soon .card-lab b{ color:var(--bone-dim); }
+.card--soon:hover .card-fr{ outline-color:rgba(223,231,224,.42); }
+
+.cards-all{ margin-top:clamp(26px,4vh,46px); }
+
+/* the plates. Each card's own screenshot, picked up by the cloth shader from
+   this background-image and hung as fabric on any device with a pointer. */
+.card:nth-child(1) .card-fr{
+  background:
+    linear-gradient(180deg,rgba(3,6,9,.04) 36%,rgba(3,6,9,.72) 100%),
+    url('../assets/work/gridpe.png') center / contain no-repeat;
+}
+.card:nth-child(2) .card-fr{
+  background:
+    linear-gradient(180deg,rgba(3,6,9,.06) 36%,rgba(3,6,9,.74) 100%),
+    url('../assets/work/esim-crm.png') center / contain no-repeat;
+}
+.card:nth-child(3) .card-fr{
+  background:
+    linear-gradient(180deg,rgba(3,6,9,.05) 36%,rgba(3,6,9,.74) 100%),
+    url('../assets/work/design-system-studio.png') center / contain no-repeat;
+}
+.card:nth-child(4) .card-fr{
+  background:
+    linear-gradient(180deg,rgba(3,6,9,.10) 30%,rgba(3,6,9,.78) 100%),
+    url('../assets/work/design-system.png') center / contain no-repeat;
+}
+
+/* The fallback replaced each still with a flat gradient, which is right when
+   the still is scenery and wrong when it is the work being shown. A portfolio
+   without its screenshots is not a degraded portfolio, it is an empty one, so
+   the plates survive the no-WebGL path. */
+.no-webgl .card:nth-child(1) .card-fr{
+  background:linear-gradient(180deg,rgba(3,6,9,.04) 36%,rgba(3,6,9,.72) 100%),
+    url('../assets/work/gridpe.png') center / contain no-repeat;
+}
+.no-webgl .card:nth-child(2) .card-fr{
+  background:linear-gradient(180deg,rgba(3,6,9,.06) 36%,rgba(3,6,9,.74) 100%),
+    url('../assets/work/esim-crm.png') center / contain no-repeat;
+}
+.no-webgl .card:nth-child(3) .card-fr{
+  background:linear-gradient(180deg,rgba(3,6,9,.05) 36%,rgba(3,6,9,.74) 100%),
+    url('../assets/work/design-system-studio.png') center / contain no-repeat;
+}
+.no-webgl .card:nth-child(4) .card-fr{
+  background:linear-gradient(180deg,rgba(3,6,9,.10) 30%,rgba(3,6,9,.78) 100%),
+    url('../assets/work/design-system.png') center / contain no-repeat;
+}
+.no-webgl .peek-fr{
+  background:
+    linear-gradient(180deg, rgba(3,6,9,.02) 30%, rgba(3,6,9,.52) 100%),
+    url('../assets/work/portrait.jpg') center 22% / cover no-repeat;
+}
+
+/* ============================================================== skills
+   Six areas on a six-column atlas. Two lead plates take a row, three take the
+   next, and the sixth runs the full width to close the block rather than
+   sitting alone in a third of a row. */
+body[data-layout-curriculum="b"] .les:nth-child(6){ grid-column:span 6; }
+body[data-layout-curriculum="b"] .les .t{ color:var(--muted); letter-spacing:.16em; }
+
+/* ============================================================= contact
+   The vertical closing word is two words now. Its own line box has to come in
+   or the pair sets solid against the right edge. */
+body[data-layout-closing="b"] .fin h2{ line-height:1.04; }
+
+/* =========================================================== responsive */
+@media (max-width:1080px){
+  /* The authored breakpoint reflows the atlas to two-per-row and gives the
+     last plate the full width — with six plates that leaves the fifth alone in
+     half a row and pushes the sixth to a row of its own. Even pairs instead. */
+  body[data-layout-curriculum="b"] .les:nth-child(n),
+  body[data-layout-curriculum="b"] .les:last-child{ grid-column:span 3; }
+}
+
+@media (max-width:900px){
+  body[data-layout-hero="b"] .hero-foot{ width:min(560px,74vw); }
+}
+
+@media (max-width:820px){
+  body[data-layout-hero="b"] .hero-foot{ width:100%; }
+  /* the chip keeps its stacked figure-over-label form here: the label is the
+     whole point of showing it, and a row would put it back beside a numeral in
+     half a phone column */
+  body[data-layout-hero="b"] .chip{ flex-direction:column; gap:5px; }
+  body[data-layout-hero="b"] .chip .num{ font-size:clamp(21px,6.6vw,30px); }
+
+  .roles li{ grid-template-columns:minmax(0,1fr) auto; row-gap:5px; }
+  .roles li b{ grid-column:1; grid-row:1; }
+  .roles li i{ grid-column:2; grid-row:1; }
+  .roles li span{ grid-column:1 / -1; grid-row:2; }
+}
+
+/* the banner unstacks with everything else on a phone */
+@media (max-width:820px){
+  body[data-layout-gallery="b"] .card--soon .card-fr{ height:auto; aspect-ratio:16 / 10; }
+}
+
+/* The standfirst sits in the gap between the headline and the top of the 3-D
+   wordmark, and that gap is about two lines deep. A third line runs straight
+   into the type behind it, so the column is a little wider here to keep the
+   sentence at two. */
+.hero-sub{ max-width:352px; }
+
+/* Where there is no cloth (coarse pointer, or the shader declining to start)
+   the plate is a plain CSS background, and it needs the same whole-image fit
+   the cloth now uses — plus a ground of its own, since `contain` leaves the
+   frame's spare axis empty. */
+.card:nth-child(-n+4) .card-fr{ background-color:#080b0f; }
+
+/* =====================================================================
+   THE SCENE, DE-DRESSED
+
+   The engine, the camera walk, the parallax and the chapter transitions are
+   the reference's, untouched. What changed is what the walk goes past: the
+   worship hall, the gate, the tiled wall, the stone lantern, the sakura and
+   the blood moon are all gone, and what is left is landscape — terrain, a
+   stone flight, rock, grass, trees, mist and a pale moon.
+   ===================================================================== */
+
+/* The near plane keeps its placement slots from the reference sheet, but what
+   stands in them is only ever ground cover now. .fg-wall is "wide, hard
+   against an edge" and holds a bank of planting; .fg-sakura is "sweeping in
+   from a lower corner" and holds grass. The class names are positions, not
+   descriptions. */
+[data-fg="pathways"] .fg-sakura > img{ filter:saturate(.82) brightness(.8); }
+
+@media (max-width:820px){
+  /* The B hero brings the vertical mark back after the base sheet has hidden
+     it, and on a phone it lands straight across the eyebrow — which is now two
+     lines long, because "available now, open to senior product designer roles"
+     is the most useful sentence on the page and is not worth shortening to
+     make room for a decoration. */
+  body[data-layout-hero="b"] .hero-side{ display:none; }
+}
