@@ -11,16 +11,39 @@ Adapted from the authored ThreeUI `KageLandingPage` reference. The engine and
 its motion are that reference's, intact. The content, the objects the walk goes
 past, and a portfolio CSS layer on top are not.
 
-## Running it
+## Getting Started
 
-Needs to be served over HTTP (fonts and WebP layers are fetched, so `file://`
-will not work):
+### Local Development
+
+Install dependencies and start the Vite dev server with Hot Module Replacement:
 
 ```bash
-python3 -m http.server 4173
+npm install
+npm run dev
 ```
 
-Then open http://127.0.0.1:4173/.
+Then open the local URL shown in your terminal (usually [http://localhost:5173/](http://localhost:5173/)).
+
+### Production Build & Preview
+
+```bash
+# Build optimized assets to dist/
+npm run build
+
+# Preview the production build locally
+npm run preview
+```
+
+### Deploying to Vercel
+
+The project is pre-configured for **Vercel** with optimized build settings and caching headers in [`vercel.json`](file:///Users/biradhwaj/Desktop/biradhwaj-kage/vercel.json):
+
+1. Push your repository to GitHub.
+2. Go to [vercel.com/new](https://vercel.com/new) and import the `biradhwaj-pf` repository.
+3. Vercel will automatically detect the **Vite** framework:
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+4. Click **Deploy**.
 
 ## Layout
 
