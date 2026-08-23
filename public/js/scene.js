@@ -2902,8 +2902,17 @@ function buildLights() {
   groundFill.position.set(0, 3.2, -24.0); scene.add(groundFill);
 }
 /* ============================================================== the lake
-   What sells water is not the water. It is three things happening on top of
-   it, and all three are reflections of one kind or another:
+   The surface is real displaced geometry — a graded grid carrying a five-wave
+   Gerstner swell, see waterGrid() and WATER_VS — and not a flat plane wearing
+   a normal map. That distinction is the difference between water you are
+   looking at and water you are looking *along*: a normal map can light a
+   surface convincingly but it cannot occlude, it cannot break a reflection
+   across a crest, and it cannot put anything on the horizon. With the rig
+   sitting two units above the waterline for a third of the page, all three of
+   those are load-bearing.
+
+   On top of the geometry, four things, and all four are reflections of one
+   kind or another:
 
      1. A real planar reflection. The mountains and the moon have to be *in*
         the surface, and no amount of shading a flat plane substitutes for it.
@@ -2919,10 +2928,13 @@ function buildLights() {
      3. The moon path. A specular lobe against a rippled normal is physically
         what a glitter track is: the small share of wave facets momentarily
         tilted to send the moon at the eye. Two lobes, one tight and one wide.
+     4. Foam on the breaking crests, driven by the Gerstner folding term rather
+        than by a threshold on height — so it appears where the surface is
+        actually pinching, which is where a real wave whitens.
 
    The surface is opaque. A dark lake at night shows nothing of its bed, so
    there is nothing to gain from transparency and something to lose — an
-   opaque plane is also what guarantees no sky can leak through the seam
+   opaque surface is also what guarantees no sky can leak through the seam
    between the water and the foot of the range. */
 const WATER = { y: 0, rt: null, cam: null, mat: null, mesh: null,
                 mtx: null, clip: null, planes: null };
@@ -2975,13 +2987,117 @@ function waterRTSize() {
           Math.max(16, Math.round(renderer.domElement.height * k))];
 }
 
+/* ---------------------------------------------------- the swell, on the CPU
+   Each entry is [heading in degrees off the far axis, wavelength, amplitude].
+
+   The headings are measured from -z, so a heading of zero is a wave whose
+   crests lie square across the view and which travels toward the camera. They
+   are spread over about two hundred degrees: a sea running in one direction
+   is a corrugated roof, and a sea running in every direction is noise. A
+   dominant set within thirty degrees of the axis plus two obliques is what a
+   real fetch looks like.
+
+   The wavelengths are geometric and the amplitudes fall with them, which is
+   the same 1/k energy distribution texRipple() uses one scale further down —
+   the swell here and the ripple texture there are meant to read as two ends
+   of one spectrum, so they are built on the same rule.
+
+   Scale matters more than it looks. The rig sits between 2.1 and 10.5 units
+   above the surface, so this is an eye barely above the water: total crest
+   height is 0.71, about a third of the lowest eye height. Measured at the
+   craft waypoint (eye 2.1, pitch +16 degrees, 46 degree fov) the frame bottom
+   sits at -6.6 degrees of elevation and a near crest at twelve units subtends
+   -6.7, so the swell only ever enters at the very bottom edge and never rises
+   into the range. Doubling these numbers would put water across the
+   mountains, which is the whole composition. */
+const SWELL = [
+  [   8, 34.0, 0.300 ],
+  [ -26, 19.0, 0.200 ],
+  [  52, 11.0, 0.115 ],
+  [ -74,  6.5, 0.062 ],
+  [ 118,  3.7, 0.030 ]
+];
+
+/* Gerstner, straight out of GPU Gems 1 ch.1, and worth saying why rather than
+   a plain sum of sines: a sine surface has round crests and round troughs,
+   which is the one thing water never has. Gerstner also displaces the surface
+   *horizontally*, bunching vertices toward the crest, and that alone is the
+   difference between a rolling swell and a quilted blanket. The steepness
+   term uChop is what scales that horizontal bunching.
+
+   The normal is analytic — the closed form from the same chapter — not a
+   finite difference, so it costs three multiply-adds per wave and is exact at
+   any tessellation. That matters here because the grid is deliberately graded
+   (see waterGrid()) and a finite-difference normal would change character
+   between the fine near cells and the coarse far ones.
+
+   uFold accumulates the same sum that drives the normal's y term. When it
+   approaches 1 the surface is pinching to a point — mathematically where a
+   Gerstner wave would begin to self-intersect, physically where a real wave
+   starts to break — so it is exactly the right signal to hang foam on, and it
+   is free. */
+const WATER_VS = [
+  'uniform float uTime, uSwell, uChop, uSpeed;',
+  'uniform vec4  uW[NW];',
+  'varying vec3  vW, vSN;',
+  'varying vec2  vB;',
+  'varying float vFold, vH;',
+  'void main(){',
+  '  vec4  wp0 = modelMatrix * vec4(position, 1.0);',
+  '  vec2  b   = wp0.xz;',
+  '  vB = b;',
+  /* The rim is flattened off. Everything past 180 units is buried in the
+     water's own fog long before this bites, so it is purely defensive: it
+     guarantees the plate's far edge is dead flat and can never lift into the
+     horizon or open a gap under the foot of the range. */
+  '  float tap = 1.0 - smoothstep(180.0, 300.0, length(b));',
+  '  vec3  disp = vec3(0.0);',
+  '  vec3  nrm  = vec3(0.0, 1.0, 0.0);',
+  '  float fold = 0.0, foldMax = 0.0, amp = 0.0;',
+  '  for (int i = 0; i < NW; i++) {',
+  '    vec2  D = uW[i].xy;',
+  '    float k = uW[i].z;',
+  '    float a = uW[i].w * uSwell * tap;',
+  /* Deep-water dispersion: long waves outrun short ones, which is why a real
+     sea never looks like one texture scrolling. */
+  '    float w  = sqrt(9.81 * k) * uSpeed;',
+  '    float f  = k * dot(D, b) + uTime * w;',
+  '    float S = sin(f), C = cos(f), ka = k * a;',
+  '    disp.xz += uChop * a * D * C;',
+  '    disp.y  += a * S;',
+  '    nrm.x   -= D.x * ka * C;',
+  '    nrm.z   -= D.y * ka * C;',
+  '    nrm.y   -= uChop * ka * S;',
+  '    fold    += uChop * ka * S;',
+  '    foldMax += uChop * ka;',
+  '    amp     += a;',
+  '  }',
+  '  vec3 wpos = wp0.xyz + disp;',
+  '  vW    = wpos;',
+  '  vSN   = normalize(nrm);',
+  /* Both of these go out normalised to -1..1, and that is deliberate rather
+     than tidy. The fragment shader hangs foam on thresholds against them, and
+     the raw sums scale with uSwell and uChop — so an absolute threshold is
+     silently correct at one setting and dead at every other. It was: the first
+     version thresholded the raw fold at 0.30 when the set could only ever
+     reach 0.298, so the folding term contributed nothing anywhere and the foam
+     was running on the height term alone. Dividing by the sums' own maxima
+     makes the thresholds mean what they say at any tuning. */
+  '  vFold = fold / max(foldMax, 1e-4);',
+  '  vH    = disp.y / max(amp, 1e-4);',
+  '  gl_Position = projectionMatrix * viewMatrix * vec4(wpos, 1.0);',
+  '}'
+].join('\n');
+
 const WATER_FS = [
   'uniform sampler2D tRefl;',
   'uniform sampler2D tNorm;',
   'uniform mat4  uReflMtx;',
-  'uniform float uHasRefl, uTime, uFogD, uWave, uGlint;',
-  'uniform vec3  uMoon, uDeep, uSky, uTint, uFogCol;',
-  'varying vec3  vW;',
+  'uniform float uHasRefl, uTime, uFogD, uWave, uGlint, uPlaneY, uFoam, uSss;',
+  'uniform vec3  uMoon, uDeep, uSky, uTint, uFogCol, uFoamCol;',
+  'varying vec3  vW, vSN;',
+  'varying vec2  vB;',
+  'varying float vFold, vH;',
   'vec2 slope(vec2 uv){ return texture2D(tNorm, uv).xy * 2.0 - 1.0; }',
   'void main(){',
   '  vec3  toCam = cameraPosition - vW;',
@@ -2992,28 +3108,69 @@ const WATER_FS = [
      it aliases into static fizz about forty units out and the lake turns to
      sandpaper. */
   '  float fade = exp(-dist * 0.055);',
-  '  vec2  p = vW.xz;',
+  /* Sampled on the *undisplaced* position, not the displaced one. The chop
+     drags the surface horizontally, and a detail map pinned to where the water
+     ended up would slide across it; pinned to where the water came from it
+     rides along with it, which is what the foam and the ripples both need. */
+  '  vec2  p = vB;',
   '  vec2  s = slope(p * 0.034 + vec2( uTime * 0.0130, uTime * 0.0210))',
   '          + slope(p * 0.087 + vec2(-uTime * 0.0190, uTime * 0.0090)) * 0.55',
   '          + slope(p * 0.240 + vec2( uTime * 0.0310,-uTime * 0.0260)) * 0.30 * fade;',
-  '  vec3  N = normalize(vec3(-s.x * uWave, 1.0, -s.y * uWave));',
+  /* The ripple tilt is grafted on to the swell normal rather than replacing
+     it. The swell normal stays inside about twenty degrees of vertical at this
+     steepness, so adding the tilt in world xz is indistinguishable from
+     building a proper tangent frame and costs nothing. */
+  '  vec3  N = normalize(vSN + vec3(-s.x, 0.0, -s.y) * uWave);',
   /* Schlick, with water's real normal-incidence reflectance of about 2%. */
   '  float ndv = max(dot(N, V), 0.0);',
   '  float F   = 0.02 + 0.98 * pow(1.0 - ndv, 5.0);',
   /* Projective lookup through the mirror camera, nudged by the surface slope.
-     The nudge has to shrink with distance or the far water tears. */
+     The nudge has to shrink with distance or the far water tears.
+
+     Sampled at the mean plane, not at the crest. A planar reflection is only
+     exact for points *on* the mirror, so feeding it the displaced height would
+     smear the reflection by the wave amplitude. Dropping the y back to the
+     plane keeps the lookup exact and lets the normal nudge — which is a real
+     optical effect, not an error term — carry the distortion. */
   '  vec3 refl = uSky;',
   '  if (uHasRefl > 0.5) {',
-  '    vec4 pr  = uReflMtx * vec4(vW, 1.0);',
+  '    vec4 pr  = uReflMtx * vec4(vW.x, uPlaneY, vW.z, 1.0);',
   '    vec2 ruv = pr.xy / max(pr.w, 1e-4);',
-  '    ruv += N.xz * (0.060 / (1.0 + dist * 0.030));',
+  '    ruv += N.xz * (0.075 / (1.0 + dist * 0.030));',
   '    refl = texture2D(tRefl, clamp(ruv, 0.002, 0.998)).rgb * uTint;',
   '  }',
-  '  vec3 col = mix(uDeep, refl, F);',
+  /* Crests sit a little above the body colour and troughs below it: light
+     gets further into a thin crest than into the bulk. Small, but it is what
+     gives the swell form in the dark instead of only in the highlights. */
+  '  vec3 body = uDeep * (1.0 + 0.55 * vH);',
+  '  vec3 col  = mix(body, refl, F);',
+  /* Back-lit crest. The moon is behind the range, so water coming toward the
+     camera is lit from behind, and the tops of the waves carry a faint cool
+     glow when the eye is looking into that light. This is the cue that reads
+     as "a wave" rather than "a bumpy mirror". */
+  '  vec3  Lh   = normalize(vec3(uMoon.x - vW.x, 0.0, uMoon.z - vW.z));',
+  '  float back = pow(max(dot(-V, Lh), 0.0), 3.0);',
+  '  col += uSss * back * smoothstep(0.20, 1.00, vH) * vec3(0.62, 0.86, 1.00);',
+  /* Foam, from three terms that all have to agree: near the top of a wave,
+     where the wave is pinching (see vFold), and broken up by the ripple
+     texture so it is lace rather than a painted contour line. Because vH
+     needs to be high and vFold needs to be high at the same moment, and the
+     five waves are rarely in phase, foam only ever appears on the biggest
+     crests — which is what a moderate sea does. */
+  '  float crest = smoothstep(0.58, 1.00, vH);',
+  '  float pinch = smoothstep(0.45, 0.95, vFold);',
+  '  float lace  = 0.35 + 0.65 * smoothstep(0.05, 0.55, length(s));',
+  '  float foam  = clamp(crest * (0.35 + 0.90 * pinch) * lace, 0.0, 1.0) * uFoam;',
+  '  col = mix(col, uFoamCol, foam);',
+  /* The glitter track: the small share of facets momentarily tilted to send
+     the moon at the eye. Two lobes, one tight and one wide. Foam is rough, so
+     it scatters instead of mirroring — the highlight is taken back out of it
+     or the crests turn to chrome. */
   '  vec3 L  = normalize(uMoon - vW);',
   '  vec3 H  = normalize(L + V);',
   '  float nh = max(dot(N, H), 0.0);',
-  '  col += vec3(1.00, 1.03, 1.10) * uGlint * (pow(nh, 240.0) * 2.30 + pow(nh, 22.0) * 0.105);',
+  '  col += vec3(1.00, 1.03, 1.10) * uGlint * (1.0 - foam * 0.85)',
+  '       * (pow(nh, 240.0) * 2.30 + pow(nh, 22.0) * 0.105);',
   /* Its own aerial perspective, gentler than the scene fog: at the scene's
      0.0168 the water is effectively gone by a hundred units, which is exactly
      where the mountains it is meant to be reflecting stand. */
@@ -3023,14 +3180,59 @@ const WATER_FS = [
   '}'
 ].join('\n');
 
-const WATER_VS = [
-  'varying vec3 vW;',
-  'void main(){',
-  '  vec4 wp = modelMatrix * vec4(position, 1.0);',
-  '  vW = wp.xyz;',
-  '  gl_Position = projectionMatrix * viewMatrix * wp;',
-  '}'
-].join('\n');
+/* A graded grid, not a uniform one, and this is the whole reason the swell can
+   be displaced geometry at all.
+
+   The plate has to be enormous — 600 across, running from 220 units behind the
+   rig to 380 in front of it — because its far edge must never come into frame
+   and nothing may show through it. A uniform grid fine enough to carry an
+   11-unit wave would need half a metre cells over all of that: nine hundred
+   thousand vertices, almost all of them past the fog and invisible.
+
+   So the spacing is graded toward where the rig actually is. Cells run about
+   half a unit under the camera, 1.3 at the foot of the near slope, 1.8 at a
+   hundred units out where the water is already half fog, and coarsen to three
+   from there. That is ~30k vertices for the same silhouette — thirty times
+   less for a surface that is, where it counts, finer than the uniform one.
+
+   The exponents are the whole trick: distance from the focus goes as t^k with
+   k > 1, so spacing grows as t^(k-1) and the fine cells cost their share of
+   the budget rather than all of it. */
+function waterGrid() {
+  const ZF = 16;                                  /* the focus: just behind waypoint 0 */
+  const zs = [];
+  /* behind the rig — six cells, only ever seen edge-on if at all */
+  for (let i = 6; i >= 1; i--) zs.push(ZF + (220 - ZF) * Math.pow(i / 6, 1.6));
+  const NF = LOW ? 104 : 200;
+  for (let i = 0; i <= NF; i++) zs.push(ZF - (ZF + 380) * Math.pow(i / NF, 1.5));
+
+  /* x is symmetric about the view axis, fine in the middle of the frame */
+  const NX = (LOW ? 80 : 144), M = NX / 2, xs = new Float32Array(NX + 1);
+  for (let i = 0; i <= M; i++) {
+    const v = 300 * Math.pow(i / M, 1.55);
+    xs[M + i] = v; xs[M - i] = -v;
+  }
+
+  const NZ = zs.length, pos = new Float32Array((NX + 1) * NZ * 3);
+  let o = 0;
+  for (let j = 0; j < NZ; j++) for (let i = 0; i <= NX; i++) {
+    pos[o] = xs[i]; pos[o + 1] = 0; pos[o + 2] = zs[j]; o += 3;
+  }
+  /* Uint32 indices: 30k vertices fits in 16 bits, but the LOW/high split and
+     any future retessellation should not be one edit away from silent
+     wraparound. WebGL2 and the OES_element_index_uint extension both cover it. */
+  const idx = new Uint32Array((NX) * (NZ - 1) * 6);
+  let q = 0;
+  for (let j = 0; j < NZ - 1; j++) for (let i = 0; i < NX; i++) {
+    const a = j * (NX + 1) + i, b = a + 1, c = a + (NX + 1), d = c + 1;
+    idx[q] = a; idx[q + 1] = c; idx[q + 2] = b;
+    idx[q + 3] = b; idx[q + 4] = c; idx[q + 5] = d; q += 6;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setIndex(new THREE.BufferAttribute(idx, 1));
+  return g;
+}
 
 function buildWater() {
   const [rw, rh] = WANT_REFL ? waterRTSize() : [4, 4];
@@ -3051,31 +3253,71 @@ function buildWater() {
   WATER.planes = [WATER.clip];
   renderer.clippingPlanes = WATER.planes;
 
+  /* The low path drops the shortest wave. It is the one whose wavelength is
+     closest to the grid step there, so it is the one that would alias, and it
+     is also the cheapest thing to lose — the ripple texture covers that scale. */
+  const NW = LOW ? 4 : 5;
+  const waves = SWELL.slice(0, NW).map(w => {
+    const th = w[0] * Math.PI / 180;
+    /* headings are measured off -z, so a crest travels toward the camera */
+    return new THREE.Vector4(Math.sin(th), -Math.cos(th), TAU / w[1], w[2]);
+  });
+
   WATER.mat = new THREE.ShaderMaterial({
+    defines: { NW: NW },
     uniforms: {
       tRefl:    { value: WATER.rt.texture },
       tNorm:    { value: tx(texRipple(), { wrap: THREE.RepeatWrapping, srgb: false, aniso: 8 }) },
       uReflMtx: { value: WATER.mtx },
       uHasRefl: { value: WANT_REFL ? 1 : 0 },
       uTime:    { value: 0 },
+      uW:       { value: waves },
+      /* A Gerstner surface self-intersects when the sum of Q*k*a reaches 1, and
+         it looks like cling film well before that. The set sums to 0.298 at
+         swell and chop of 1, so these two are the budget: 1.25 * 1.5 puts it at
+         0.56, which is the steepest the crests get before the troughs start to
+         read as creases rather than water.
+
+         Total crest height at 1.25 is 0.88 against a rig that comes down to
+         2.1 above the surface. Measured at the craft waypoint that puts a near
+         crest at -5.8 degrees of elevation against a frame bottom of -6.6, so
+         the swell grazes the bottom edge and no more. There is not much room
+         above these numbers, which is the point of having them here in one
+         place rather than folded into SWELL's amplitudes. */
+      uSwell:   { value: qn('swell', 1.25) },
+      uChop:    { value: qn('chop', 1.50) },
+      /* A shade under real, which reads calmer without reading like slow
+         motion. The primary swell's period goes from 4.7 seconds to 5.7. */
+      uSpeed:   { value: qn('wspeed', 0.82) },
       uWave:    { value: 0.78 },
       uGlint:   { value: 1.0 },
+      uFoam:    { value: qn('foam', 0.85) },
+      uSss:     { value: 0.030 },
+      uPlaneY:  { value: WATER.y },
       uMoon:    { value: new THREE.Vector3(MOON.x, MOON.y, MOON.z) },
       /* authored linear: the scene renders untonemapped into a half-float
          buffer and POST.comp does exposure and ACES at the end */
       uDeep:    { value: new THREE.Color().setRGB(.0040, .0105, .0165) },
       uSky:     { value: new THREE.Color().setRGB(.0230, .0450, .0680) },
       uTint:    { value: new THREE.Color().setRGB(.820, .900, 1.000) },
+      uFoamCol: { value: new THREE.Color().setRGB(.0550, .0700, .0860) },
       uFogCol:  { value: new THREE.Color().setRGB(.0050, .0115, .0170) },
       uFogD:    { value: 0.0108 }
     },
     vertexShader: WATER_VS, fragmentShader: WATER_FS,
+    /* DoubleSide because the grid is generated rather than a PlaneGeometry, so
+       its winding is not something a reader should have to verify to trust that
+       the lake is visible. The eye is never under the surface, so the back
+       faces are never drawn and this costs nothing. */
+    side: THREE.DoubleSide,
     fog: false, transparent: false, depthWrite: true
   });
 
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), WATER.mat);
-  mesh.rotation.x = -Math.PI / 2;
-  mesh.position.set(0, WATER.y, -80);
+  /* No rotation and no offset: waterGrid() emits world xz directly, because the
+     vertex shader needs world coordinates to phase the waves and threading them
+     through a rotated local frame only creates a place to get a sign wrong. */
+  const mesh = new THREE.Mesh(waterGrid(), WATER.mat);
+  mesh.position.set(0, WATER.y, 0);
   mesh.frustumCulled = false;
   scene.add(mesh);
   WATER.mesh = mesh; WORLD.water = mesh;

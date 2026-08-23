@@ -210,8 +210,24 @@ architecture and the seasonal dressing came out and the landscape stayed:
      and two hundred, so the whole thing arrived as one flat wash with a 24%
      luminance spread. The curve has to do its work inside that window.
 
-- **The ground is a lake.** `buildWater()`. What sells water is not the water,
-  it is three things happening on top of it:
+- **The ground is a lake, and its surface is real geometry.** `buildWater()`.
+  A five-wave Gerstner swell displaces an actual grid (`WATER_VS`,
+  `waterGrid()`); it is not a flat plane wearing a normal map. That distinction
+  is the difference between water you look *at* and water you look *along* — a
+  normal map can light a surface convincingly but it cannot occlude, cannot
+  break a reflection across a crest, and cannot put anything on the horizon.
+  The rig sits barely two units above the waterline for a third of the page, so
+  all three matter.
+
+  Gerstner rather than a sum of sines because a sine surface has round crests
+  *and* round troughs, which is the one thing water never has. Gerstner also
+  displaces horizontally, bunching vertices toward the crest, and that alone is
+  the difference between a rolling swell and a quilted blanket. The normal is
+  the closed analytic form from GPU Gems 1 ch.1, not a finite difference — which
+  matters because the grid is deliberately non-uniform and a differenced normal
+  would change character between the fine near cells and the coarse far ones.
+
+  On top of the geometry, four things:
 
   1. **A real planar reflection.** The mountains and the moon have to be *in*
      the surface; shading a flat plane is no substitute. The scene is rendered
@@ -231,14 +247,59 @@ architecture and the seasonal dressing came out and the landscape stayed:
      what a glitter track *is*: the small share of wave facets momentarily
      tilted to send the moon at the eye. Two lobes, one tight for the sparkle
      and one wide for the sheen around it.
+  4. **Foam on the breaking crests**, hung on the Gerstner *folding* term rather
+     than on a height threshold. That sum is the same one driving the normal's
+     y component; when it approaches 1 the surface is pinching to a point —
+     mathematically where the wave would self-intersect, physically where a real
+     wave whitens — so it is exactly the right signal, and it is free.
 
-  The waves are a sum of sinusoids whose wave numbers are whole cycles across
-  the plate, which is what makes the normal map tile seamlessly; amplitude
-  falls as 1/k, roughly how real wave energy distributes across scales, and
-  that is what stops it looking like corrugated iron. Three octaves scroll on
-  different headings, and the finest is attenuated with distance — without that
-  it aliases into static fizz about forty units out and the lake turns to
-  sandpaper.
+  Below the swell, the ripple detail is still a sum of sinusoids whose wave
+  numbers are whole cycles across the plate, which is what makes the normal map
+  tile seamlessly; amplitude falls as 1/k, roughly how real wave energy
+  distributes across scales, and that is what stops it looking like corrugated
+  iron. Three octaves scroll on different headings, and the finest is attenuated
+  with distance — without that it aliases into static fizz about forty units out
+  and the lake turns to sandpaper. The swell and the ripple texture are built on
+  the same 1/k rule on purpose: they are two ends of one spectrum.
+
+  **The grid is graded, and that is what makes displaced geometry affordable
+  here at all.** The plate has to be enormous — 600 across, from 220 units
+  behind the rig to 380 in front — because its far edge must never enter frame
+  and nothing may show through it. Uniform cells fine enough to carry an
+  11-unit wave over all of that would be ~900k vertices, almost every one of
+  them past the fog. Spacing is graded toward the rig instead (`waterGrid()`):
+  about half a unit under the camera, 1.3 at the foot of the near slope, 1.8 at
+  a hundred units out, coarsening to three beyond. 30k vertices for the same
+  silhouette, finer than the uniform grid exactly where it counts. Measured
+  cost: **0.07 ms** on a scene pass that runs 0.68.
+
+  **Three numbers are load-bearing and there is not much room above them.**
+  `uSwell` and `uChop` are the budget against Gerstner's self-intersection
+  limit: the wave set sums to 0.298 at 1/1, and the shipped 1.25/1.5 puts it at
+  0.56 — steeper and the troughs start reading as creases rather than water.
+  Total crest height is then 0.88 against a rig that comes down to 2.1 above the
+  surface; measured at the craft waypoint that puts a near crest at −5.8° of
+  elevation against a frame bottom of −6.6°, so the swell grazes the bottom edge
+  and no more. Double it and there is water across the mountains, which is the
+  whole composition. Both are overridable as `?swell=` / `?chop=`.
+
+  **The foam thresholds are normalised, and this was a real bug once.** `vFold`
+  and `vH` leave the vertex shader divided by their own maxima, so they run
+  −1..1 whatever `uSwell` and `uChop` are set to. The first version thresholded
+  the *raw* fold at 0.30 when the set could only ever reach 0.298 — so the
+  folding term contributed nothing anywhere, and foam was silently running on
+  the height term alone at a third of its intended strength. An absolute
+  threshold against a sum that scales with the tuning knobs is correct at one
+  setting and dead at every other.
+
+  The reflection is sampled at the **mean plane**, not at the crest. A planar
+  reflection is only exact for points *on* the mirror, so feeding it the
+  displaced height smears the reflection by the wave amplitude; dropping y back
+  to the plane keeps the lookup exact and lets the normal nudge — a real optical
+  effect, not an error term — carry the distortion. For the same family of
+  reasons the ripple detail is sampled on the *undisplaced* position: the chop
+  drags the surface horizontally, and a detail map pinned to where the water
+  ended up slides across it, while one pinned to where it came from rides along.
 
   The surface is **opaque**. A dark lake shows nothing of its bed, so
   transparency buys nothing and costs the guarantee that no sky can leak
