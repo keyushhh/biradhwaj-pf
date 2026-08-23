@@ -3766,12 +3766,33 @@ function boot() {
     console.error('[scene] init wiring failed', err);
   }
 
-  const watchdog = setTimeout(() => {
-    if (preEl && !preEl.classList.contains('done')) {
-      console.warn('[scene] preloader watchdog timeout reached, completing start');
-      fallback('preloader timeout');
-    }
-  }, 4000);
+  /* This used to be a single 4-second timer from the start of boot. That is
+     wrong for the same reason a flight departure gate doesn't close on a
+     fixed clock regardless of whether passengers are still boarding: the jobs
+     do real, variable synchronous work — buildRange() alone walks a grid that
+     can run to 70k+ vertices with a 5-octave noise sample and a repose pass at
+     every one of them — and totalling that across eleven jobs legitimately
+     passed 4 seconds on ordinary hardware. The watchdog fired mid-boot, hid
+     the canvas and showed the static fallback, while the real boot kept
+     running underneath to a silent, complete success a couple of seconds
+     later. The page was never broken; the loading screen just gave up on it
+     early and nothing ever told it to stand down.
+
+     A per-job deadline instead of a whole-boot one: it re-arms every time a
+     job finishes, so a device slow enough to need eleven seconds for eleven
+     honest jobs gets eleven seconds, and only a job that is genuinely stuck —
+     not merely slow — ever trips it. */
+  let watchdog;
+  const armWatchdog = () => {
+    clearTimeout(watchdog);
+    watchdog = setTimeout(() => {
+      if (preEl && !preEl.classList.contains('done')) {
+        console.warn('[scene] preloader watchdog: no job finished in 6s, falling back');
+        fallback('preloader stalled');
+      }
+    }, 6000);
+  };
+  armWatchdog();
 
   let i = 0;
   const step = () => {
@@ -3783,6 +3804,7 @@ function boot() {
     const j = JOBS[i];
     const done = () => {
       i++;
+      armWatchdog();
       const p = i / JOBS.length;
       if (preFill) preFill.style.right = ((1 - p) * 100).toFixed(1) + '%';
       if (prePct) prePct.textContent = Math.round(p * 100);

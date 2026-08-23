@@ -363,7 +363,18 @@
 
 <div class="rail" id="rail"></div>
 
-<script type="module" src="/secret-pathways-assets/three.min.js"></script>
-<script type="module" src="/js/scene.js"></script>
+<!-- Both are plain classic scripts, not modules. three.min.js is a UMD build
+     that attaches itself to the global scope as `window.THREE`, and scene.js
+     is written as an IIFE that expects that global to already exist — it has
+     no import/export anywhere. Loading either as type="module" hands it to
+     Rollup, which treats the UMD preamble's `typeof exports=="object"`
+     branch as a real CommonJS interop opportunity, wraps the file in a fake
+     module with a throwaway local `exports`, and it runs to completion
+     without ever touching `window.THREE`. scene.js's `initGL()` then throws
+     "THREE is not defined" and the scene never gets past its first boot job.
+     Plain scripts skip that path entirely: Vite just copies them, hashes the
+     filenames, and rewrites the two src attributes below at build time. -->
+<script src="secret-pathways-assets/three.min.js"></script>
+<script src="js/scene.js"></script>
 </body>
 </html>
