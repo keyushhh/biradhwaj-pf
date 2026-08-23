@@ -293,11 +293,11 @@ h1,h2,h3{ font-weight:400; margin:0; letter-spacing:-.005em; }
 /* fixed, or the gradient is measured against a 6000-pixel body box and the
    moon ends up somewhere around the curriculum table */
 .no-webgl body{ background:
-  radial-gradient(11vw 11vw at 73% 17%, rgba(232,52,28,.95), rgba(158,20,16,.62) 44%, rgba(96,12,12,.20) 64%, transparent 72%),
-  radial-gradient(38vw 32vw at 50% 46%, rgba(228,104,24,.40), rgba(122,42,10,.18) 54%, transparent 74%),
+  radial-gradient(11vw 11vw at 73% 17%, rgba(223,231,224,.92), rgba(159,196,220,.58) 44%, rgba(90,110,122,.18) 64%, transparent 72%),
+  radial-gradient(38vw 32vw at 50% 46%, rgba(159,196,220,.36), rgba(80,98,112,.16) 54%, transparent 74%),
   radial-gradient(120% 80% at 50% 0%, rgba(120,150,158,.16), transparent 60%), #05070a;
   background-attachment:fixed; }
-.no-webgl .peek-fr{ background:linear-gradient(160deg,#162326,#0b1013 55%,#241010); }
+.no-webgl .peek-fr{ background:linear-gradient(160deg,#162326,#0b1013 55%,#0f1a1c); }
 .no-webgl .word-fb{
   display:block; position:absolute; left:0; right:0; bottom:16%; z-index:1;
   font-family:'Wordmark','Onest',sans-serif; font-weight:600; font-size:21.4vw; line-height:.78;
