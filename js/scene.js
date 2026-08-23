@@ -1122,8 +1122,10 @@ const DPR_CAP      = qn('dpr', LOW ? 1.4 : 1.8);
 const PERF = { scale: 1, acc: 0, n: 0, locked: qs('adapt', '1') === '0' };
 
 function initGL() {
-  if (qs('nogl', '0') !== '0' || !window.THREE) throw new Error('webgl disabled');
-  renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !WANT_POST, alpha: false, powerPreference: 'high-performance' });
+  const T = (typeof window !== 'undefined' && window.THREE) || (typeof globalThis !== 'undefined' && globalThis.THREE) || (typeof THREE !== 'undefined' && THREE);
+  if (qs('nogl', '0') !== '0' || !T) throw new Error('webgl disabled');
+  if (typeof window !== 'undefined' && !window.THREE) window.THREE = T;
+  renderer = new T.WebGLRenderer({ canvas: canvas, antialias: !WANT_POST, alpha: false, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, DPR_CAP));
   /* updateStyle stays on: the stylesheet sizes the canvas at 100% of the
      initial containing block, which is the very box that runs wide on a
@@ -3720,9 +3722,8 @@ function frame(now) {
 const TIMER = qs('driver', 'raf') === 'timer';
 function queue() { TIMER ? setTimeout(() => frame(performance.now()), 16) : requestAnimationFrame(frame); }
 
-/* ======================================================== 14 · booting */
 const JOBS = [
-  ['Reading the type', () => document.fonts && document.fonts.load('600 320px Wordmark')],
+  ['Reading the type', () => (document.fonts ? Promise.race([document.fonts.load('600 320px Wordmark'), new Promise(res => setTimeout(res, 250))]) : null)],
   ['Pouring the ground', () => { initGL(); WORLD.uT = { value: 0 }; buildRig(); buildLights(); }],
   ['Cutting the approach', () => buildShell()],
   ['Raising the range', () => buildRange()],
@@ -3731,14 +3732,6 @@ const JOBS = [
   ['Placing the stones', () => {
     buildRocks();
     buildLantern(7.4, -7.0, 1.15); buildLantern(-7.6, -5.2, 1.0);
-    /* These four used to stand on the cheeks of the flight, and their heights
-       were solved from the tread constants so they would sit on the rail rather
-       than beside it. There is no flight now, so they stand on the court — and
-       they do a better job of it. Splayed a little as they recede and dropping
-       in scale, they read as a path across the valley floor toward the range,
-       which is the line the eye needs when there is nothing built to climb.
-       They are also, with the glow in the mist, the only warm light left out
-       here, and the page's exposure is balanced against them. */
     [[6.5, -14.4, .95], [7.9, -23.5, .84], [9.4, -33.0, .74]].forEach(l => {
       buildLantern( l[0], l[1], l[2]);
       buildLantern(-l[0] - .8, l[1] - 1.6, l[2] * .96);
@@ -3757,37 +3750,67 @@ const JOBS = [
     WORLD.fg.forEach(m => m.layers.set(1));
     WORD.glyphs.forEach(m => m.layers.set(2));
     if (WORLD.rain) WORLD.rain.layers.set(1);
-    /* the fall is all around the rig, including behind it — mirroring it
-       would drop leaves into the water that are nowhere near the water */
     if (WORLD.leaves) WORLD.leaves.mesh.layers.set(1);
     WORLD.ripples.forEach(r => r.layers.set(1));
     layoutWord(); measure();
-    /* nothing that casts a shadow ever moves, so bake it once */
     if (WANT_SHADOW && WORLD.key) { WORLD.key.shadow.autoUpdate = false; WORLD.key.shadow.needsUpdate = true; }
   }]
 ];
 
 function boot() {
-  makeGrain();
-  wireReveals(); wireForegroundStages(); wireNav(); wireHeroExit(); wireFocus(); wireCursor();
-  document.body.classList.add('is-locked');
+  try {
+    makeGrain();
+    wireReveals(); wireForegroundStages(); wireNav(); wireHeroExit(); wireFocus(); wireCursor();
+    document.body.classList.add('is-locked');
+  } catch (err) {
+    console.error('[scene] init wiring failed', err);
+  }
+
+  const watchdog = setTimeout(() => {
+    if (preEl && !preEl.classList.contains('done')) {
+      console.warn('[scene] preloader watchdog timeout reached, completing start');
+      fallback('preloader timeout');
+    }
+  }, 4000);
+
   let i = 0;
   const step = () => {
+    if (i >= JOBS.length) {
+      clearTimeout(watchdog);
+      setTimeout(start, 220);
+      return;
+    }
     const j = JOBS[i];
     const done = () => {
       i++;
       const p = i / JOBS.length;
-      preFill.style.right = ((1 - p) * 100).toFixed(1) + '%';
-      prePct.textContent = Math.round(p * 100);
-      if (i < JOBS.length) setTimeout(step, 16); else setTimeout(start, 220);
+      if (preFill) preFill.style.right = ((1 - p) * 100).toFixed(1) + '%';
+      if (prePct) prePct.textContent = Math.round(p * 100);
+      if (i < JOBS.length) {
+        setTimeout(step, 16);
+      } else {
+        clearTimeout(watchdog);
+        setTimeout(start, 220);
+      }
     };
     let r;
-    try { r = j[1](); }
-    catch (err) {
+    try {
+      r = j[1]();
+    } catch (err) {
       console.error('[scene] job "' + j[0] + '" failed', err);
-      if (i <= 1) return fallback(err);          /* no renderer, no scene */
+      if (i <= 1) {
+        clearTimeout(watchdog);
+        return fallback(err);
+      }
     }
-    (r && r.then) ? r.then(done, done) : done();
+    if (r && typeof r.then === 'function') {
+      Promise.race([
+        r,
+        new Promise(resolve => setTimeout(resolve, 600))
+      ]).then(done, done);
+    } else {
+      done();
+    }
   };
   setTimeout(step, 60);
 }
@@ -3796,7 +3819,7 @@ function fallback(err) {
   document.documentElement.classList.add('no-webgl');
   document.body.classList.add('no-webgl');
   document.body.classList.remove('is-locked');
-  preEl.classList.add('done');
+  if (preEl) preEl.classList.add('done');
   $$('[data-rv], .mask-line').forEach(e => e.classList.add('rv-in'));
   window.__scene = window.__secret = { fallback: true, error: String(err && err.message || err) };
 }
