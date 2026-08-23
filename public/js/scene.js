@@ -1371,12 +1371,13 @@ function buildShell() {
     normalMap: tx(fT.normal, { wrap: THREE.RepeatWrapping, repeat: [28, 28], srgb: false, aniso: 16 }),
     roughnessMap: tx(fT.rough, { wrap: THREE.RepeatWrapping, repeat: [13.6, 13.6], srgb: false }),
     normalScale: new THREE.Vector2(.30, .30),
-    /* The court used to carry a planar mirror and this was tuned to feed it —
-       near-polished, and metal enough to hold a reflection. With the mirror
-       gone those numbers only made the paving read as sheet metal, so it goes
-       back to being wet stone: rough, barely metallic, and lit rather than
-       reflecting. */
-    roughness: .74, metalness: .06, color: 0x69757a
+    /* Dark ground, not paving. This was 0x69757a — a mid grey — at roughness
+       .74 with a trace of metalness, which is a wet flagstone court: it caught
+       every light in the scene and returned a broad specular sheen, and a flat
+       mid-grey sheen is read as a deck or a jetty every single time. Taken down
+       to near-black and fully rough it returns almost nothing, and reads as
+       what it is: the dark floor of a valley, under grass. */
+    roughness: .96, metalness: 0, color: 0x1b2226
   });
   /* Big enough that its own far edge can never be seen, which the 150-unit
      version emphatically was not.
@@ -1438,11 +1439,9 @@ function buildShell() {
    width IS a structure's silhouette, regardless of what texture is on it.
 
    The valley floor now carries its own light with no plane to stand in for
-   it: buildLights()' hallL/wing/pathL point lights (still at this same
-   depth) light the ground and the mist as real point sources with real
-   falloff, and the individual lanterns from the JOBS entry that places them
-   are the only warm shapes actually standing in the scene. Nothing here
-   needs its own function any more. */
+   it, and nothing standing in it to be lit: the lamp posts and every warm
+   point light on the valley floor have gone too. The moon lights this valley
+   and nothing else. Nothing here needs its own function any more. */
 
 /* ============================================================ the range
    Real geometry, not painted plates.
@@ -2909,18 +2908,11 @@ function buildLights() {
   moonKey.target.position.set(0, 8, -40); scene.add(moonKey.target);
   scene.add(moonKey);
 
-  /* The warm source at the head of the valley. These three were at podium
-     height — seven units up — because they were lighting the top of a flight
-     of stairs. The stairs are gone and so is the podium, so they come down on
-     to the court, where they light the ground and the mist instead. Short
-     ranges, deliberately: the glow has to stay a local thing in the haze, or
-     it reaches the foot of the range and the mountains turn into a lantern. */
-  const hallL = new THREE.PointLight(0xffc48f, 2.3, 15, 2);
-  hallL.position.set(0, 1.9, TEMPLE_Z + 11.0); scene.add(hallL); WORLD.hallLight = hallL;
-  [-1, 1].forEach(s => {
-    const w = new THREE.PointLight(0xffbe86, 2.0, 11, 2);
-    w.position.set(s * 10.6, 1.6, TEMPLE_Z + 9.0); scene.add(w);
-  });
+  /* The three warm point lights that used to sit down on the valley floor have
+     gone with the lamp posts. They were the last thing painting bright pools on
+     to a flat plane, and a flat plane with warm pools on it is a lit deck no
+     matter what the plane is textured with. What lights this valley now is the
+     moon and nothing else — which is what a valley at night looks like. */
 
   /* the moon throws almost nothing, but a trace of its own colour high on the
      right keeps it attached to the scene instead of floating on top of it */
@@ -2930,12 +2922,11 @@ function buildLights() {
   const fill = new THREE.PointLight(0x86c6d2, 0.95, 30, 2);
   fill.position.set(-1, 13.5, -16.0); scene.add(fill);
 
-  /* The flight used to be the spine of the composition and this lamp was what
-     kept it out of the same black as the ground. The spine is now the line of
-     lanterns running out across the court, so the lamp drops to their height
-     and sits among them. */
-  const pathL = new THREE.PointLight(0xffcb9e, 3.4, 22, 2);
-  pathL.position.set(0, 2.4, -24.0); scene.add(pathL);
+  /* A cool fill low over the ground in place of the warm path lamp. It reads as
+     more moonlight rather than as a source standing in the scene, which is the
+     whole point: the ground should be *lit*, not *lamplit*. */
+  const groundFill = new THREE.PointLight(0x7fa8c4, 1.15, 34, 2);
+  groundFill.position.set(0, 3.2, -24.0); scene.add(groundFill);
 }
 /* ====================================================== 6 · planar mirror */
 /* ================================================== 7 · post-processing */
@@ -3627,7 +3618,6 @@ function updateWorld(dt) {
   RIG.focusAmt = damp(RIG.focusAmt, RIG.focus >= 0 ? 1 : 0, 5, dt);
   const pulse = Math.sin(clock * 1.9) * .5 + .5;
   const f = RIG.focusAmt;
-  if (WORLD.hallLight) WORLD.hallLight.intensity = 3.4 * (1 + f * .30) * (1 + Math.sin(clock * .43) * .045);
   /* the moon only breathes — the haze in front of it is what actually moves */
   if (WORLD.moonHalo) WORLD.moonHalo.material.opacity = .44 + f * .10 + Math.sin(clock * .34) * .05;
   if (WORLD.lanternLights) WORLD.lanternLights.forEach((l, i) => {
@@ -3733,14 +3723,15 @@ const JOBS = [
   ['Cutting the approach', () => buildShell()],
   ['Raising the range', () => buildRange()],
   ['Hanging the moon', () => buildMoon()],
-  ['Placing the stones', () => {
-    buildRocks();
-    buildLantern(7.4, -7.0, 1.15); buildLantern(-7.6, -5.2, 1.0);
-    [[6.5, -14.4, .95], [7.9, -23.5, .84], [9.4, -33.0, .74]].forEach(l => {
-      buildLantern( l[0], l[1], l[2]);
-      buildLantern(-l[0] - .8, l[1] - 1.6, l[2] * .96);
-    });
-  }],
+  /* Rocks only. There were eight lit lamp posts standing in a receding double
+     row across the valley floor, and together with the flat ground and the
+     pools they threw on it they were the "dock": a paved surface, edged with
+     lights, marching to a vanishing point. Nothing about that is landscape —
+     it is a promenade, and it survived four separate attempts to fix it
+     because each of those attempts went after the *symptoms* (a glow plane, a
+     mist band, the floor's far edge) instead of the thing itself. Lamp posts
+     on a lit path are a built structure. They are gone. */
+  ['Placing the stones', () => buildRocks()],
   ['Growing the maples', () => {
     buildMaple(71, 12.6, -13.0, 1.05); buildMaple(72, -11.8, -9.4, .95);
     buildMaple(73, 9.2, -19.0, .82);   buildMaple(74, -14.5, -17.5, 1.0);

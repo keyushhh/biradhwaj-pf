@@ -257,12 +257,31 @@ architecture and the seasonal dressing came out and the landscape stayed:
   that hand-sorting was wrong twice, because a `renderOrder` putting the disc
   behind one ridge necessarily puts it behind every ridge drawn at the same or
   a later order whatever their actual distance.
-- **The lighting went from ember to lamp.** Six point lights were between
-  `0xff3a1c` and `0xffa049`. That orange-red was pooling on everything near it —
-  what looked like red maple trees at the frame edge were ordinary trees lit
-  blood-orange. All warm sources are now amber.
-- **The lanterns** lost their pagoda caps and finials for flat slabs, and their
-  panes are amber rather than red. They read as lights on a path.
+- **There is no warm light in the scene at all, and no lamp posts.** This took
+  five passes to get right, and every pass but the last was aimed at the wrong
+  thing.
+
+  The complaint each time was a "dock": a flat, pale, lit surface running across
+  the valley with lights along it. I removed a glow plane, then a mist band,
+  then the floor's far edge — symptoms, all of them — and it kept coming back,
+  because the dock was never one object. It was an *assembly*: a flat ground
+  plane in mid-grey wet-flagstone (`0x69757a`, roughness .74, a trace of
+  metalness) plus eight lit lamp posts standing on it in a receding double row
+  plus three warm point lights down at ground level pooling on it. Each part is
+  defensible on its own. Together they are a promenade, and no amount of
+  re-tinting a promenade turns it into a landscape.
+
+  So: the eight posts are gone, the three warm ground lights are gone, and the
+  ground is `0x1b2226` at roughness .96 with zero metalness — near-black and
+  fully diffuse, returning almost nothing. The moon is the only light source
+  left; the six remaining lights are all cool. Verified by inventory rather
+  than by eye, because the artefact was global geometry and therefore appeared
+  in every chapter at once: zero warm lights in the scene, and the only
+  warm-emitting mesh left anywhere is the drifting leaf fall.
+
+  The general lesson, since it cost five attempts: **a flat plane with lights
+  on it reads as built, whatever it is textured with.** Fix the assembly, not
+  the tint.
 - **The near bough** was tinted six parts red to one part green — the most
   saturated object on the page, four metres off the lens. It is green now.
 - **The leaf fall** was an emissive red at 260 instances, which read as embers.
@@ -357,8 +376,7 @@ Copy is all in `index.html`. The things that are *not* markup:
   the honest fix is a different canopy generator rather than another re-tint —
   `buildMaple(seed, x, z, scale)` in `js/scene.js` is self-contained and its five
   call sites are all in one `JOBS` entry.
-- **The lantern posts** are the other judgement call, and they now carry more
-  weight than they did: with the flight gone they are the only built thing left
-  on the valley floor and the only warm accents outside the glow in the mist.  Flat-capped and amber they
-  read as path lights, but they are still a box of lit panels on a stone post.
-  `buildLantern` is one function and six calls if that turns out wrong.
+- **`buildLantern()` is now dead code.** All eight call sites are gone (see the
+  note on warm light above); the function itself is left in place because it is
+  self-contained and harmless, but nothing references it. Delete it if the file
+  needs slimming.
