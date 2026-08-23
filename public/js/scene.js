@@ -1404,40 +1404,24 @@ function buildShell() {
 }
 
 /* ------------------------------------------------- the head of the valley
-   Nothing is built here.
+   Nothing is built here, and nothing is hung in the air here either.
 
-   This was a worship hall, then a stone terrace, and now it is weather. The
-   terrace went the same way the hall did and for the same reason: the range
-   behind it is real geometry now, and a built platform in front of a mountain
-   turns the mountain into a backdrop for the platform.
+   This was a worship hall, then a stone terrace, then a pair of glowing
+   planes standing in for the terrace's light. That last version was the
+   wrong call: two flat, hard-edged rectangles — a 26-unit pool and a 96-unit
+   mist band — sitting at a fixed height in the middle of the valley read
+   exactly like a lit dock or boardwalk crossing the water, complete with the
+   lanterns either side of it standing in as its lamp posts. Every built
+   thing that has stood at this depth (hall, terrace, then this) has ended up
+   reading as a structure, because a flat glowing plane at a fixed height and
+   width IS a structure's silhouette, regardless of what texture is on it.
 
-   What stays is the light, and that is not sentiment — every exposure decision
-   on the page, the scrims and the text shadows and the bloom threshold, is
-   balanced against a warm source sitting at this depth. Removing the thing the
-   light was coming out of is not the same as removing the light. It is a glow
-   with no visible cause now, which is exactly what mist is for.
-
-   It also stays because of what the first attempt at removing it taught: a
-   large diffuse glow with nothing solid inside it has no focal point, and the
-   whole middle of the frame went to milk. What the composition needs at this
-   depth is not brightness but a small hard bright thing to look toward. So it
-   is a tight pool low in the mist rather than a column of warm air.        */
-function buildValleyGlow() {
-  /* the pool — tight, and sitting just off the ground where the haze is */
-  const spill = new THREE.Mesh(new THREE.PlaneGeometry(26, 9),
-    new THREE.MeshBasicMaterial({ map: tx(texGlow('rgba(255,206,158,.78)', 'rgba(244,168,104,.22)')),
-      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
-      fog: false, opacity: .30 }));
-  spill.position.set(0, 2.1, TEMPLE_Z + 8.0); spill.renderOrder = 2;
-  scene.add(spill); WORLD.hallHalo = spill;
-
-  /* and the band of mist it is inside — the one thing that stops the junction
-     of the valley floor and the foot of the range reading as a seam */
-  const mist = new THREE.Mesh(new THREE.PlaneGeometry(96, 22),
-    new THREE.MeshBasicMaterial({ map: tx(texGlow('rgba(150,178,190,.62)', 'rgba(104,138,154,.20)')),
-      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, opacity: .19 }));
-  mist.position.set(0, 2.6, TEMPLE_Z + 13); mist.renderOrder = 2; scene.add(mist);
-}
+   The valley floor now carries its own light with no plane to stand in for
+   it: buildLights()' hallL/wing/pathL point lights (still at this same
+   depth) light the ground and the mist as real point sources with real
+   falloff, and the individual lanterns from the JOBS entry that places them
+   are the only warm shapes actually standing in the scene. Nothing here
+   needs its own function any more. */
 
 /* ============================================================ the range
    Real geometry, not painted plates.
@@ -1682,8 +1666,8 @@ function buildRange() {
      covering: the field's near edge is faded to nothing over fifty units and
      sunk below the floor plane, so there is no line there to hide, and the
      range now reads by its own tonal recession rather than by veils drawn
-     between its layers. The mist that remains is buildValleyGlow()'s single
-     band at the head of the valley, which has a reason to be there. */
+     between its layers. What lights the valley floor now is buildLights()'
+     point sources and the lanterns, not a plane standing in for either. */
 }
 
 /* --------------------------------------------------- the vermilion moon
@@ -3621,7 +3605,6 @@ function updateWorld(dt) {
   RIG.focusAmt = damp(RIG.focusAmt, RIG.focus >= 0 ? 1 : 0, 5, dt);
   const pulse = Math.sin(clock * 1.9) * .5 + .5;
   const f = RIG.focusAmt;
-  if (WORLD.hallHalo) WORLD.hallHalo.material.opacity = .30 + f * .14 + Math.sin(clock * .6) * .035;
   if (WORLD.hallLight) WORLD.hallLight.intensity = 3.4 * (1 + f * .30) * (1 + Math.sin(clock * .43) * .045);
   /* the moon only breathes — the haze in front of it is what actually moves */
   if (WORLD.moonHalo) WORLD.moonHalo.material.opacity = .44 + f * .10 + Math.sin(clock * .34) * .05;
@@ -3727,7 +3710,6 @@ const JOBS = [
   ['Pouring the ground', () => { initGL(); WORLD.uT = { value: 0 }; buildRig(); buildLights(); }],
   ['Cutting the approach', () => buildShell()],
   ['Raising the range', () => buildRange()],
-  ['Lighting the valley', () => buildValleyGlow()],
   ['Hanging the moon', () => buildMoon()],
   ['Placing the stones', () => {
     buildRocks();
