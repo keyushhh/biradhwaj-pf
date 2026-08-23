@@ -30,17 +30,6 @@ npm run build
 npm run preview
 ```
 
-### Deploying to Vercel
-
-The project is pre-configured for **Vercel** with optimized build settings and caching headers in `vercel.json`:
-
-1. Push your repository to GitHub.
-2. Go to [vercel.com/new](https://vercel.com/new) and import the `biradhwaj-pf` repository.
-3. Vercel will automatically detect the **Vite** framework:
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-4. Click **Deploy**.
-
 ## Layout
 
 ```
