@@ -116,54 +116,6 @@ function normalFromHeight(hc, strength) {
 }
 
 /* ------------------------------------------------------- 2 · surfaces */
-/* long, wet, board-formed concrete — the sanctuary walls */
-function texWall() {
-  const W = 1024, H = 1024;
-  const c = cvs(W, H), x = c.getContext('2d');
-  x.fillStyle = '#10161a'; x.fillRect(0, 0, W, H);
-
-  /* mottling */
-  x.globalCompositeOperation = 'overlay'; x.globalAlpha = .82;
-  x.drawImage(fbmCanvas(W, H, 41, 6, 3, 1), 0, 0);
-  x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
-
-  /* board-form seams every sixth */
-  const rnd = mulberry32(7);
-  for (let i = 1; i < 6; i++) {
-    const y = (H / 6) * i;
-    x.fillStyle = 'rgba(0,0,0,.45)'; x.fillRect(0, y - 1.5, W, 3);
-    x.fillStyle = 'rgba(190,205,205,.05)'; x.fillRect(0, y + 2, W, 2);
-  }
-  /* form-tie dimples */
-  for (let i = 0; i < 6; i++) for (let j = 0; j < 4; j++) {
-    const cx2 = (W / 4) * (j + .5) + (rnd() - .5) * 14, cy = (H / 6) * (i + .5);
-    const g = x.createRadialGradient(cx2, cy, 1, cx2, cy, 11);
-    g.addColorStop(0, 'rgba(0,0,0,.5)'); g.addColorStop(.7, 'rgba(0,0,0,.18)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-    x.fillStyle = g; x.beginPath(); x.arc(cx2, cy, 11, 0, TAU); x.fill();
-  }
-  /* rain streaks running the full height */
-  for (let i = 0; i < 190; i++) {
-    const sx = rnd() * W, w = .6 + rnd() * 3.4, top = rnd() * H * .5, len = H * (.4 + rnd() * .7);
-    const g = x.createLinearGradient(0, top, 0, top + len);
-    const dark = rnd() > .45;
-    g.addColorStop(0, 'rgba(0,0,0,0)');
-    g.addColorStop(.25, dark ? 'rgba(0,0,0,.20)' : 'rgba(170,195,200,.045)');
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    x.fillStyle = g; x.fillRect(sx, top, w, len);
-  }
-  /* fine tooth */
-  x.globalAlpha = .16; x.globalCompositeOperation = 'overlay';
-  x.drawImage(fbmCanvas(512, 512, 91, 3, 128, 1.4), 0, 0, W, H);
-  x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
-
-  /* height for the normal map: seams + streaks only */
-  const h = cvs(W, H), hx = h.getContext('2d');
-  hx.fillStyle = '#808080'; hx.fillRect(0, 0, W, H);
-  hx.globalAlpha = .5; hx.drawImage(fbmCanvas(W, H, 41, 5, 6, 1), 0, 0); hx.globalAlpha = 1;
-  for (let i = 1; i < 6; i++) { hx.fillStyle = '#2a2a2a'; hx.fillRect(0, (H / 6) * i - 2, W, 4); }
-  return { map: c, normal: normalFromHeight(h, 2.0) };
-}
-
 /* one maple leaf, white on transparent — tinted per instance */
 function texLeaf() {
   const S = 128, c = cvs(S, S), x = c.getContext('2d');
@@ -752,12 +704,6 @@ function surface(t, rep, o) {
   if (t.rough) m.roughnessMap = tx(t.rough, { wrap: wrap, repeat: rep, srgb: false });
   return m;
 }
-/* Board and block textures are generated once and shared, since several
-   meshes reuse the same material and regenerating a canvas per instance
-   would be a pointless multiple of the load cost for an identical result. */
-const LIB = {};
-const lib = (k, f) => (LIB[k] || (LIB[k] = f()));
-
 function mergeGeos(list) {
   let vN = 0, iN = 0;
   list.forEach(g => { vN += g.attributes.position.count; iN += g.index.count; });
@@ -785,13 +731,6 @@ function mergeGeos(list) {
 const WORLD = {};                 /* named handles the page can animate */
 
 function buildShell() {
-  const wallT = texWall();
-  const wallMap = tx(wallT.map, { wrap: THREE.RepeatWrapping, repeat: [4, 1.4] });
-  const wallNrm = tx(wallT.normal, { wrap: THREE.RepeatWrapping, repeat: [4, 1.4], srgb: false });
-  const wallMat = new THREE.MeshStandardMaterial({
-    map: wallMap, normalMap: wallNrm, normalScale: new THREE.Vector2(.85, .85),
-    roughness: .78, metalness: .05, color: 0x525c60
-  });
   /* The court used to be a roofless box. It is now an open mountain approach:
      nothing encloses the frame but the night, the ridge and the fog. */
 
@@ -3627,7 +3566,7 @@ function fallback(err) {
   document.body.classList.remove('is-locked');
   if (preEl) preEl.classList.add('done');
   $$('[data-rv], .mask-line').forEach(e => e.classList.add('rv-in'));
-  window.__scene = window.__secret = { fallback: true, error: String(err && err.message || err) };
+  window.__scene = { fallback: true, error: String(err && err.message || err) };
 }
 
 function start() {
@@ -3664,7 +3603,7 @@ function start() {
   running = true; tPrev = performance.now();
   INTRO.t0 = shot !== null ? 0 : (REDUCE ? performance.now() - 4000 : performance.now());
   queue();
-  window.__scene = window.__secret = { RIG: RIG, WORLD: WORLD, WORD: WORD, CAM: CAM, POST: POST, WATER: WATER, renderer: renderer, scene: scene, camera: camera, anchors: () => anchors };
+  window.__scene = { RIG: RIG, WORLD: WORLD, WORD: WORD, CAM: CAM, POST: POST, WATER: WATER, renderer: renderer, scene: scene, camera: camera, anchors: () => anchors };
 }
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(boot, 0);

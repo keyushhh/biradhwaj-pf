@@ -45,7 +45,6 @@ secret-pathways-assets/
   fonts.css                   Onest and the Wordmark face, base64-inlined
   three.min.js                Three.js r149, local
   foreground/png/*.webp       five ground-cover layers for the near plane
-  generated/*.webp            unused — the plates carry real screenshots
 ```
 
 Nothing is fetched from a CDN. Fully self-contained and static — any file host

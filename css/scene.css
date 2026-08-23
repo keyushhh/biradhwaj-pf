@@ -56,7 +56,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   font-size:10px; font-weight:500; letter-spacing:.22em; text-transform:uppercase;
   color:var(--bone-dim); text-shadow:0 1px 16px rgba(3,6,8,.9);
 }
-.jp{ font-family:'NotoJP','Onest',sans-serif; font-weight:400; }
 h1,h2,h3{ font-weight:400; margin:0; letter-spacing:-.005em; }
 .display{
   text-transform:uppercase; line-height:1.055; letter-spacing:-.012em;
@@ -202,18 +201,11 @@ h1,h2,h3{ font-weight:400; margin:0; letter-spacing:-.005em; }
   width:clamp(150px,16vw,262px); display:block;
   transition:transform .8s var(--ease-out);
 }
-.peek-fr{ display:block; aspect-ratio:16/10;
-  background:linear-gradient(180deg, rgba(3,6,9,.04) 24%, rgba(3,6,9,.48) 100%),
-    url('../secret-pathways-assets/generated/sanmon-preview.webp') center / cover no-repeat;
+.peek-fr{ display:block;
   outline:1px solid rgba(223,231,224,.16); outline-offset:-1px;
   box-shadow:0 34px 70px -30px rgba(0,0,0,.9); transition:outline-color .5s; }
 .peek:hover{ transform:translate3d(0,-5px,0); }
 .peek:hover .peek-fr{ outline-color:rgba(223,231,224,.42); }
-.peek-play{ position:absolute; top:0; right:0; left:0; bottom:auto; aspect-ratio:16/10;
-  display:grid; place-items:center; pointer-events:none; }
-.peek-play svg{ width:clamp(30px,3.2vw,46px); height:auto; filter:drop-shadow(0 2px 12px rgba(0,0,0,.7));
-  transition:transform .55s var(--ease-out); }
-.peek:hover .peek-play svg{ transform:scale(1.14); }
 .peek-cap{ display:flex; align-items:baseline; gap:9px; margin-top:9px; }
 .peek-cap b{ font-size:11px; font-weight:400; letter-spacing:.24em; color:var(--bone-dim); }
 .peek-cap i{ font-style:normal; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
@@ -282,21 +274,6 @@ h1,h2,h3{ font-weight:400; margin:0; letter-spacing:-.005em; }
   transition:outline-color .5s var(--ease);
 }
 .card:hover .card-fr{ outline-color:rgba(223,231,224,.30); }
-.card:nth-child(1) .card-fr{
-  background:
-    linear-gradient(180deg,rgba(3,6,9,.04) 36%,rgba(3,6,9,.72) 100%),
-    url('../secret-pathways-assets/generated/approach.webp') center / cover no-repeat;
-}
-.card:nth-child(2) .card-fr{
-  background:
-    linear-gradient(180deg,rgba(3,6,9,.06) 36%,rgba(3,6,9,.74) 100%),
-    url('../secret-pathways-assets/generated/lantern-court.webp') center / cover no-repeat;
-}
-.card:nth-child(3) .card-fr{
-  background:
-    linear-gradient(180deg,rgba(3,6,9,.05) 36%,rgba(3,6,9,.74) 100%),
-    url('../secret-pathways-assets/generated/moonwater.webp') center / cover no-repeat;
-}
 .card-fr::after{ content:''; position:absolute; inset:0;
   background:linear-gradient(transparent 46%, rgba(4,6,9,.80)); pointer-events:none; }
 /* The fabric overdraws its card by CL_BLEED on every side so the billow and
@@ -312,7 +289,7 @@ h1,h2,h3{ font-weight:400; margin:0; letter-spacing:-.005em; }
 /* If WebGL will not start, the page stays a page: the scene simply becomes a
    still, and the wordmark moves from the 3-D layer into the document. */
 .word-fb{ display:none; }
-.no-webgl #gl, .no-webgl .peek-play{ display:none; }
+.no-webgl #gl{ display:none; }
 /* fixed, or the gradient is measured against a 6000-pixel body box and the
    moon ends up somewhere around the curriculum table */
 .no-webgl body{ background:
@@ -338,7 +315,6 @@ h1,h2,h3{ font-weight:400; margin:0; letter-spacing:-.005em; }
 .card-lab{ position:absolute; left:16px; right:16px; bottom:14px; z-index:2;
   display:flex; align-items:flex-end; justify-content:space-between; gap:10px; }
 .card-lab b{ font-size:clamp(13px,1.15vw,17px); font-weight:400; letter-spacing:.02em; text-transform:uppercase; }
-.card-lab .jp{ font-size:11px; letter-spacing:.3em; color:rgba(223,231,224,.62); }
 .card-ar{ position:absolute; top:14px; right:14px; z-index:2; width:26px; height:26px;
   opacity:0; transform:translate3d(-4px,4px,0); transition:.5s var(--ease-out); }
 .card:hover .card-ar{ opacity:1; transform:none; }
@@ -370,7 +346,6 @@ h1,h2,h3{ font-weight:400; margin:0; letter-spacing:-.005em; }
 .les .k{ font-size:11px; letter-spacing:.16em; color:var(--muted); font-variant-numeric:tabular-nums; transition:color .4s; }
 .les:hover .k{ color:var(--accent); }
 .les h3{ font-size:clamp(16px,1.5vw,23px); font-weight:400; letter-spacing:-.005em; }
-.les h3 em{ font-style:normal; font-family:'NotoJP',sans-serif; font-size:.72em; color:var(--muted); margin-left:12px; letter-spacing:.24em; }
 .les p{ margin:0; font-size:13px; line-height:1.6; color:#909b95; text-shadow:0 1px 16px rgba(3,6,8,.92); }
 .les .t{ text-align:right; font-size:11px; letter-spacing:.14em; color:#8b958f; font-variant-numeric:tabular-nums; text-shadow:0 1px 16px rgba(3,6,8,.92); }
 .les .bar{ position:absolute; left:0; bottom:-1px; height:1px; width:100%; background:var(--accent);
@@ -510,7 +485,6 @@ body[data-layout-hero="b"] .chip .tx{
 body[data-layout-hero="b"] .peek{
   left:auto; right:var(--pad); top:auto; bottom:clamp(38px,7vh,96px);
 }
-body[data-layout-hero="b"] .peek-cap b.jp{ font-size:clamp(20px,2.2vw,34px); letter-spacing:.18em; }
 /* The Japanese title reads down the right edge, hung under the navigation —
    the one mark on that side of the frame now that the romanization has gone. */
 body[data-layout-hero="b"] .hero-side{
@@ -663,12 +637,6 @@ body[data-layout-footer="b"] .foot-base span:last-child{ text-align:right; }
 [data-fg-in="up"]   { transform:translate3d(0,13%,0); }
 [data-fg-in="left"] { transform:translate3d(-11%,6%,0); }
 [data-fg-in="right"]{ transform:translate3d(11%,6%,0); }
-/* one slow breath, on the two lightest layers only */
-@keyframes fg-sway{
-  from{ transform:rotate(-.45deg) translate3d(0,2px,0); }
-  to  { transform:rotate(.45deg)  translate3d(0,-6px,0); }
-}
-.fg-el--sway > img{ animation:fg-sway 21s var(--ease-io) infinite alternate; transform-origin:0% 45%; }
 
 /* The active chapter owns a bottom-anchored near plane. Its former stage is
    retained only long enough to dissolve into the next chapter's scene. */
@@ -760,7 +728,6 @@ body[data-layout-footer="b"] .foot-base span:last-child{ text-align:right; }
   [data-fg="foot"] .fg-grass { right:-12%; bottom:-30px; width:min(74vw,380px); }
 }
 @media (prefers-reduced-motion:reduce){
-  .fg-el--sway > img{ animation:none; }
   .fg.fg-retiring .fg-el{ transition:none !important; filter:none !important; }
 }
 
