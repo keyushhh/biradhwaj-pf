@@ -400,8 +400,14 @@ h1,h2,h3{ font-weight:400; margin:0; letter-spacing:-.005em; }
   padding:clamp(20px,2.4vw,30px) 0; border-bottom:1px solid var(--line-soft);
   cursor:pointer; transition:padding .5s var(--ease-out);
 }
+/* Missed on the first accent pass because it was never routed through the
+   --vermilion/--accent variable — it was a literal rgba() baked straight into
+   the gradient, so renaming the variable renamed nothing here and the hover
+   stayed red. rgb(159,196,220) is --accent (#9fc4dc) spelled out in rgba(),
+   which is what a variable can't do inside a gradient stop without a level of
+   indirection this file doesn't otherwise use. */
 .les::before{ content:''; position:absolute; left:calc(var(--pad) * -1); right:0; top:0; bottom:0;
-  background:linear-gradient(90deg, rgba(224,35,28,.09), transparent 46%);
+  background:linear-gradient(90deg, rgba(159,196,220,.09), transparent 46%);
   opacity:0; transition:opacity .55s var(--ease); pointer-events:none; }
 .les:hover::before{ opacity:1; }
 .les:hover{ padding-left:clamp(8px,1.2vw,18px); }
@@ -600,7 +606,7 @@ body[data-layout-curriculum="b"] .les{
 }
 body[data-layout-curriculum="b"] .les:nth-child(-n+2){ grid-column:span 3; }
 body[data-layout-curriculum="b"] .les:nth-child(n+3){ grid-column:span 2; }
-body[data-layout-curriculum="b"] .les::before{ left:0; background:linear-gradient(145deg,rgba(224,35,28,.13),transparent 58%); }
+body[data-layout-curriculum="b"] .les::before{ left:0; background:linear-gradient(145deg,rgba(159,196,220,.13),transparent 58%); }
 body[data-layout-curriculum="b"] .les:hover{ padding-left:32px; }
 body[data-layout-curriculum="b"] .les h3{ font-size:clamp(20px,2vw,30px); }
 body[data-layout-curriculum="b"] .les p{ display:block; max-width:34ch; }
