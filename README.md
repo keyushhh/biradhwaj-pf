@@ -210,6 +210,52 @@ architecture and the seasonal dressing came out and the landscape stayed:
      and two hundred, so the whole thing arrived as one flat wash with a 24%
      luminance spread. The curve has to do its work inside that window.
 
+- **The ground is a lake.** `buildWater()`. What sells water is not the water,
+  it is three things happening on top of it:
+
+  1. **A real planar reflection.** The mountains and the moon have to be *in*
+     the surface; shading a flat plane is no substitute. The scene is rendered
+     a second time from the camera mirrored through the water plane into its
+     own half-resolution half-float buffer, and the surface samples that
+     buffer projectively. Reflecting a camera basis reverses its handedness —
+     the mirror camera's right vector comes out negated, which is why the
+     lookup has to go through *its* projection and view matrices rather than
+     main-camera screen UV.
+  2. **Fresnel.** Water seen from above is nearly black; water at a grazing
+     angle is nearly a mirror. That ramp (Schlick, with water's real 2%
+     normal-incidence reflectance) is the strongest "this is a liquid" cue
+     there is, and it is what makes the far half of a lake bright and the near
+     half dark. Without it a reflective plane reads as polished stone — the
+     exact failure this scene had already suffered once.
+  3. **The moon path.** A specular lobe against a rippled normal is physically
+     what a glitter track *is*: the small share of wave facets momentarily
+     tilted to send the moon at the eye. Two lobes, one tight for the sparkle
+     and one wide for the sheen around it.
+
+  The waves are a sum of sinusoids whose wave numbers are whole cycles across
+  the plate, which is what makes the normal map tile seamlessly; amplitude
+  falls as 1/k, roughly how real wave energy distributes across scales, and
+  that is what stops it looking like corrugated iron. Three octaves scroll on
+  different headings, and the finest is attenuated with distance — without that
+  it aliases into static fizz about forty units out and the lake turns to
+  sandpaper.
+
+  The surface is **opaque**. A dark lake shows nothing of its bed, so
+  transparency buys nothing and costs the guarantee that no sky can leak
+  through the seam at the foot of the range.
+
+  Two things worth knowing before editing it. The reflection buffer sizes
+  itself inside the render function rather than only at build time, because the
+  canvas can legitimately be zero-sized when the build jobs run (background
+  tab, collapsed pane, container not yet laid out) and a buffer sized from a
+  zero canvas clamps to 16x16 and stays there. And the single global clipping
+  plane is installed once and only *moved*, never added or removed: the count
+  of clipping planes is baked into every shader program, so toggling it per
+  frame would recompile the whole scene twice a frame.
+
+  `?refl=0` disables the reflection pass; the low-quality path disables it
+  automatically, keeping Fresnel and the moon path, which is most of the read.
+
 - **The ground is one plane, and it is deliberately enormous.** The floor is
   600 x 600 rather than the reference's 150 x 150, and this is not padding — it
   is the fix for the longest-running visual bug in this scene. The range is a

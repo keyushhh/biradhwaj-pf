@@ -1365,45 +1365,18 @@ function buildShell() {
      instead — buildRange(), a displaced height field. */
 
   /* floor + podium */
-  const fT = texFloor();
-  const floorMat = new THREE.MeshStandardMaterial({
-    map: tx(fT.map, { wrap: THREE.RepeatWrapping, repeat: [28, 28], aniso: 16 }),
-    normalMap: tx(fT.normal, { wrap: THREE.RepeatWrapping, repeat: [28, 28], srgb: false, aniso: 16 }),
-    roughnessMap: tx(fT.rough, { wrap: THREE.RepeatWrapping, repeat: [13.6, 13.6], srgb: false }),
-    normalScale: new THREE.Vector2(.30, .30),
-    /* Dark ground, not paving. This was 0x69757a — a mid grey — at roughness
-       .74 with a trace of metalness, which is a wet flagstone court: it caught
-       every light in the scene and returned a broad specular sheen, and a flat
-       mid-grey sheen is read as a deck or a jetty every single time. Taken down
-       to near-black and fully rough it returns almost nothing, and reads as
-       what it is: the dark floor of a valley, under grass. */
-    roughness: .96, metalness: 0, color: 0x1b2226
-  });
-  /* Big enough that its own far edge can never be seen, which the 150-unit
-     version emphatically was not.
+  /* The valley floor is a lake now — see buildWater(). It keeps the one job
+     the old ground plane had beyond being ground: it is 600 x 600 and centred
+     well back, so its own far edge can never come into frame.
 
-     The range is a height field that is deliberately sunk below y = 0 for its
-     first fifty units so it cannot z-fight this plane, and it only climbs back
-     above zero somewhere around sixty to a hundred units out. This plane used
-     to stop at z = -93. Between the two there was a strip of ground that
-     *nothing* covered — measured at the hero waypoint, screen rows 0.60 to
-     0.66 hit no geometry at all — so the sky showed through the floor. A
-     straight-edged band of pale sky lying between dark ground and dark
-     mountains is exactly a lit dock seen end-on, and the lanterns standing
-     along it completed the illusion. The give-away was that the upper edge of
-     that band measured perfectly horizontal across the entire frame: terrain
-     never does that, a plane's edge always does.
-
-     600 x 600 centred well back covers the whole footprint of the range and
-     then some, so the junction is now the terrain's own y = 0 contour —
-     irregular, following the hills — instead of a ruled line. Scene fog
-     (near-black, effectively total by a hundred units) takes the far half of
-     the plane down to nothing on its own, so there is no horizon edge either.
-     Repeats scale with the size to hold texel density. */
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), floorMat);
-  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -80); floor.receiveShadow = true;
-  scene.add(floor);
-  WORLD.floor = floor; WORLD.floorMat = floorMat;
+     That mattered, and still does. The range is a height field deliberately
+     sunk below y = 0 for its first fifty units so it cannot z-fight this
+     plane, and it only climbs back above zero sixty to a hundred units out.
+     The ground plane used to stop at z = -93, and between the two there was a
+     strip that *nothing* covered — measured at the hero waypoint, screen rows
+     0.60 to 0.66 hit no geometry at all — so the sky showed through the floor
+     as a hard-edged pale band. The water plane inherits the large footprint
+     and is fully opaque for the same reason: nothing can show through it. */
 
   /* Nothing is built between the near grass and the range any more.
 
@@ -2928,7 +2901,229 @@ function buildLights() {
   const groundFill = new THREE.PointLight(0x7fa8c4, 1.15, 34, 2);
   groundFill.position.set(0, 3.2, -24.0); scene.add(groundFill);
 }
-/* ====================================================== 6 · planar mirror */
+/* ============================================================== the lake
+   What sells water is not the water. It is three things happening on top of
+   it, and all three are reflections of one kind or another:
+
+     1. A real planar reflection. The mountains and the moon have to be *in*
+        the surface, and no amount of shading a flat plane substitutes for it.
+        The scene is rendered a second time from the camera mirrored through
+        the water plane, into its own half-resolution buffer, and the surface
+        samples that buffer projectively.
+     2. Fresnel. Water looking straight down is nearly black; water at a
+        grazing angle is nearly a mirror. That ramp is the single strongest
+        "this is a liquid" cue there is, and it is what makes the far half of
+        a lake bright and the near half dark. Without it a reflective plane
+        reads as polished stone — which is exactly the failure this scene
+        already had once.
+     3. The moon path. A specular lobe against a rippled normal is physically
+        what a glitter track is: the small share of wave facets momentarily
+        tilted to send the moon at the eye. Two lobes, one tight and one wide.
+
+   The surface is opaque. A dark lake at night shows nothing of its bed, so
+   there is nothing to gain from transparency and something to lose — an
+   opaque plane is also what guarantees no sky can leak through the seam
+   between the water and the foot of the range. */
+const WATER = { y: 0, rt: null, cam: null, mat: null, mesh: null,
+                mtx: null, clip: null, planes: null };
+/* The reflection costs a second full scene pass — 141k triangles of range plus
+   the sky and the moon — every frame. That is affordable next to what this page
+   already does (a main pass, up to four live card viewports and ten post
+   passes) but it is not affordable on the devices that trigger the low-quality
+   path, so they fall back to a flat sky reflectance instead. They keep the
+   Fresnel ramp and the moon path, which is most of the read. */
+const WANT_REFL = qs('refl', '1') !== '0' && !LOW;
+const NO_CLIP = [];
+
+/* A seamless wave height field. The wave numbers are whole numbers of cycles
+   across the plate, which is what makes it tile without a seam —
+   normalFromHeight() already samples with wraparound, so the normal map comes
+   out seamless too. Amplitude falls as 1/k, roughly how real wave energy is
+   distributed across scales, and it is what stops the result looking like
+   corrugated iron. */
+function texRipple() {
+  const S = 512, c = cvs(S, S), x = c.getContext('2d');
+  const im = x.createImageData(S, S), d = im.data;
+  const rnd = mulberry32(4242), waves = [];
+  for (let i = 0; i < 20; i++) {
+    const kx = Math.round((rnd() - .5) * 13), ky = Math.round((rnd() - .5) * 13);
+    if (!kx && !ky) continue;
+    waves.push([kx, ky, rnd() * TAU, 1 / Math.hypot(kx, ky)]);
+  }
+  const buf = new Float32Array(S * S);
+  let lo = 1e9, hi = -1e9;
+  for (let y = 0; y < S; y++) for (let i = 0; i < S; i++) {
+    let v = 0;
+    for (let w = 0; w < waves.length; w++) {
+      const q = waves[w];
+      v += q[3] * Math.sin(TAU * (q[0] * i / S + q[1] * y / S) + q[2]);
+    }
+    buf[y * S + i] = v; if (v < lo) lo = v; if (v > hi) hi = v;
+  }
+  const inv = 255 / Math.max(1e-6, hi - lo);
+  for (let i = 0; i < S * S; i++) {
+    const g = (buf[i] - lo) * inv;
+    d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = g; d[i * 4 + 3] = 255;
+  }
+  x.putImageData(im, 0, 0);
+  return normalFromHeight(c, 3.4);
+}
+
+function waterRTSize() {
+  const k = LOW ? .25 : .5;
+  return [Math.max(16, Math.round(renderer.domElement.width * k)),
+          Math.max(16, Math.round(renderer.domElement.height * k))];
+}
+
+const WATER_FS = [
+  'uniform sampler2D tRefl;',
+  'uniform sampler2D tNorm;',
+  'uniform mat4  uReflMtx;',
+  'uniform float uHasRefl, uTime, uFogD, uWave, uGlint;',
+  'uniform vec3  uMoon, uDeep, uSky, uTint, uFogCol;',
+  'varying vec3  vW;',
+  'vec2 slope(vec2 uv){ return texture2D(tNorm, uv).xy * 2.0 - 1.0; }',
+  'void main(){',
+  '  vec3  toCam = cameraPosition - vW;',
+  '  float dist  = length(toCam);',
+  '  vec3  V     = toCam / max(dist, 1e-4);',
+  /* Three octaves on different headings so the surface never shows one
+     travelling direction. The finest is attenuated with distance: without that
+     it aliases into static fizz about forty units out and the lake turns to
+     sandpaper. */
+  '  float fade = exp(-dist * 0.055);',
+  '  vec2  p = vW.xz;',
+  '  vec2  s = slope(p * 0.034 + vec2( uTime * 0.0130, uTime * 0.0210))',
+  '          + slope(p * 0.087 + vec2(-uTime * 0.0190, uTime * 0.0090)) * 0.55',
+  '          + slope(p * 0.240 + vec2( uTime * 0.0310,-uTime * 0.0260)) * 0.30 * fade;',
+  '  vec3  N = normalize(vec3(-s.x * uWave, 1.0, -s.y * uWave));',
+  /* Schlick, with water's real normal-incidence reflectance of about 2%. */
+  '  float ndv = max(dot(N, V), 0.0);',
+  '  float F   = 0.02 + 0.98 * pow(1.0 - ndv, 5.0);',
+  /* Projective lookup through the mirror camera, nudged by the surface slope.
+     The nudge has to shrink with distance or the far water tears. */
+  '  vec3 refl = uSky;',
+  '  if (uHasRefl > 0.5) {',
+  '    vec4 pr  = uReflMtx * vec4(vW, 1.0);',
+  '    vec2 ruv = pr.xy / max(pr.w, 1e-4);',
+  '    ruv += N.xz * (0.060 / (1.0 + dist * 0.030));',
+  '    refl = texture2D(tRefl, clamp(ruv, 0.002, 0.998)).rgb * uTint;',
+  '  }',
+  '  vec3 col = mix(uDeep, refl, F);',
+  '  vec3 L  = normalize(uMoon - vW);',
+  '  vec3 H  = normalize(L + V);',
+  '  float nh = max(dot(N, H), 0.0);',
+  '  col += vec3(1.00, 1.03, 1.10) * uGlint * (pow(nh, 240.0) * 2.30 + pow(nh, 22.0) * 0.105);',
+  /* Its own aerial perspective, gentler than the scene fog: at the scene's
+     0.0168 the water is effectively gone by a hundred units, which is exactly
+     where the mountains it is meant to be reflecting stand. */
+  '  float f = 1.0 - exp(-pow(dist * uFogD, 2.0));',
+  '  col = mix(col, uFogCol, f);',
+  '  gl_FragColor = vec4(col, 1.0);',
+  '}'
+].join('\n');
+
+const WATER_VS = [
+  'varying vec3 vW;',
+  'void main(){',
+  '  vec4 wp = modelMatrix * vec4(position, 1.0);',
+  '  vW = wp.xyz;',
+  '  gl_Position = projectionMatrix * viewMatrix * wp;',
+  '}'
+].join('\n');
+
+function buildWater() {
+  const [rw, rh] = WANT_REFL ? waterRTSize() : [4, 4];
+  WATER.rt = new THREE.WebGLRenderTarget(rw, rh, {
+    minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+    type: THREE.HalfFloatType, depthBuffer: true, stencilBuffer: false
+  });
+  WATER.cam = new THREE.PerspectiveCamera(36, 1, .35, 1900);
+  WATER.cam.layers.set(0);                 /* no near foreground, no wordmark */
+  WATER.mtx = new THREE.Matrix4();
+
+  /* One clipping plane, installed once and never added or removed again. The
+     count of global clipping planes is baked into every shader program, so
+     toggling it per frame would recompile the entire scene twice a frame. It
+     is parked at y >= -1e5 (clipping nothing) and only swung up to the water
+     line for the reflection pass. */
+  WATER.clip = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1e5);
+  WATER.planes = [WATER.clip];
+  renderer.clippingPlanes = WATER.planes;
+
+  WATER.mat = new THREE.ShaderMaterial({
+    uniforms: {
+      tRefl:    { value: WATER.rt.texture },
+      tNorm:    { value: tx(texRipple(), { wrap: THREE.RepeatWrapping, srgb: false, aniso: 8 }) },
+      uReflMtx: { value: WATER.mtx },
+      uHasRefl: { value: WANT_REFL ? 1 : 0 },
+      uTime:    { value: 0 },
+      uWave:    { value: 0.78 },
+      uGlint:   { value: 1.0 },
+      uMoon:    { value: new THREE.Vector3(MOON.x, MOON.y, MOON.z) },
+      /* authored linear: the scene renders untonemapped into a half-float
+         buffer and POST.comp does exposure and ACES at the end */
+      uDeep:    { value: new THREE.Color().setRGB(.0040, .0105, .0165) },
+      uSky:     { value: new THREE.Color().setRGB(.0230, .0450, .0680) },
+      uTint:    { value: new THREE.Color().setRGB(.820, .900, 1.000) },
+      uFogCol:  { value: new THREE.Color().setRGB(.0050, .0115, .0170) },
+      uFogD:    { value: 0.0108 }
+    },
+    vertexShader: WATER_VS, fragmentShader: WATER_FS,
+    fog: false, transparent: false, depthWrite: true
+  });
+
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), WATER.mat);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.set(0, WATER.y, -80);
+  mesh.frustumCulled = false;
+  scene.add(mesh);
+  WATER.mesh = mesh; WORLD.water = mesh;
+}
+
+/* NDC -> texture coordinates, for the projective reflection lookup. */
+const _bias = new THREE.Matrix4().set(.5, 0, 0, .5,  0, .5, 0, .5,  0, 0, .5, .5,  0, 0, 0, 1);
+const _wFwd = new THREE.Vector3(), _wUp = new THREE.Vector3(), _wTgt = new THREE.Vector3();
+
+function renderReflection() {
+  if (!WANT_REFL || !WATER.rt || !WATER.mesh) return;
+  const c = camera, m = WATER.cam, h = WATER.y;
+  if (c.position.y <= h + .05) return;             /* eye at or below the surface */
+
+  /* Size the buffer here rather than only at build time and on resize. The
+     canvas can legitimately be zero-sized when the build jobs run — a
+     background tab, a collapsed pane, a container that has not laid out yet —
+     and a buffer sized from a zero canvas clamps to 16x16 and then stays there
+     until something happens to fire a resize. setSize() is a no-op when the
+     dimensions already match, so this costs nothing per frame and cannot drift. */
+  const want = waterRTSize();
+  if (want[0] < 32 || want[1] < 32) return;        /* nothing worth rendering into */
+  if (WATER.rt.width !== want[0] || WATER.rt.height !== want[1]) WATER.rt.setSize(want[0], want[1]);
+
+  /* The mirror camera: position and target reflected through the plane, and
+     the up vector reflected with them. Reflecting a basis reverses its
+     handedness, which is why the mirrored camera's right vector comes out
+     negated — and why the reflection has to be sampled projectively through
+     *this* camera's own matrices rather than by main-camera screen UV. */
+  m.position.set(c.position.x, 2 * h - c.position.y, c.position.z);
+  _wUp.set(0, 1, 0).applyQuaternion(c.quaternion);
+  m.up.set(_wUp.x, -_wUp.y, _wUp.z);
+  _wFwd.set(0, 0, -1).applyQuaternion(c.quaternion);
+  _wTgt.copy(c.position).addScaledVector(_wFwd, 60);
+  m.lookAt(_wTgt.x, 2 * h - _wTgt.y, _wTgt.z);
+  m.fov = c.fov; m.aspect = c.aspect; m.near = c.near; m.far = c.far;
+  m.updateProjectionMatrix(); m.updateMatrixWorld(true);
+  WATER.mtx.copy(_bias).multiply(m.projectionMatrix).multiply(m.matrixWorldInverse);
+
+  WATER.mesh.visible = false;                       /* or it samples itself */
+  WATER.clip.constant = -(h - 0.04);                /* keep only what is above */
+  renderer.setRenderTarget(WATER.rt);
+  renderer.clear(true, true, false);
+  renderer.render(scene, m);
+  WATER.clip.constant = 1e5;                        /* park it again */
+  WATER.mesh.visible = true;
+}
+
 /* ================================================== 7 · post-processing */
 const POST = { levels: [] };
 const QUAD_VS = 'varying vec2 vUv;\nvoid main(){ vUv = uv; gl_Position = vec4( position.xy, 0.0, 1.0 ); }';
@@ -3597,6 +3792,7 @@ function resize() {
     let lw = Math.max(2, pw >> 1), lh = Math.max(2, ph >> 1);
     POST.levels.forEach(L => { L.a.setSize(lw, lh); L.b.setSize(lw, lh); L.w = lw; L.h = lh; lw = Math.max(2, lw >> 1); lh = Math.max(2, lh >> 1); });
   }
+  if (WATER.rt && WANT_REFL) { const r = waterRTSize(); WATER.rt.setSize(r[0], r[1]); }
   /* multisampling is the first thing to go when the budget tightens */
   if (POST.scene) {
     const want = (!LOW && PERF.scale > .78) ? 2 : 0;
@@ -3633,6 +3829,14 @@ function updateWorld(dt) {
     h.position.x = h.userData.x0 + Math.sin(clock * h.userData.sp + h.userData.ph) * 5.5;
     h.quaternion.copy(camera.quaternion);
   });
+
+  /* the lake surface. The moon is read from the mesh rather than the MOON
+     constant, because placeMoon() slides it with the frame aspect and the
+     glitter path has to point at where it actually is. */
+  if (WATER.mat) {
+    WATER.mat.uniforms.uTime.value = clock;
+    if (WORLD.moon) WATER.mat.uniforms.uMoon.value.copy(WORLD.moon.position);
+  }
 
   /* ripples on the standing water */
   if (WORLD.ripples) WORLD.ripples.forEach(r => {
@@ -3672,6 +3876,7 @@ function updateWorld(dt) {
 let FRAME = 0;
 function render() {
   FRAME++;
+  renderReflection();
   renderer.setRenderTarget(WANT_POST ? POST.scene : null);
   renderer.clear(true, true, false);
   renderer.render(scene, camera);
@@ -3721,6 +3926,7 @@ const JOBS = [
   ['Reading the type', () => (document.fonts ? Promise.race([document.fonts.load('600 320px Wordmark'), new Promise(res => setTimeout(res, 250))]) : null)],
   ['Pouring the ground', () => { initGL(); WORLD.uT = { value: 0 }; buildRig(); buildLights(); }],
   ['Cutting the approach', () => buildShell()],
+  ['Filling the lake', () => buildWater()],
   ['Raising the range', () => buildRange()],
   ['Hanging the moon', () => buildMoon()],
   /* Rocks only. There were eight lit lamp posts standing in a receding double
@@ -3875,7 +4081,7 @@ function start() {
   running = true; tPrev = performance.now();
   INTRO.t0 = shot !== null ? 0 : (REDUCE ? performance.now() - 4000 : performance.now());
   queue();
-  window.__scene = window.__secret = { RIG: RIG, WORLD: WORLD, WORD: WORD, CAM: CAM, POST: POST, renderer: renderer, scene: scene, camera: camera, anchors: () => anchors };
+  window.__scene = window.__secret = { RIG: RIG, WORLD: WORLD, WORD: WORD, CAM: CAM, POST: POST, WATER: WATER, renderer: renderer, scene: scene, camera: camera, anchors: () => anchors };
 }
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(boot, 0);
