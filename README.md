@@ -1,11 +1,14 @@
 # Biradhwaj Senapati — portfolio
 
-A scroll-driven portfolio built on a live WebGL scene: six chapters walking up a
-misty hillside at night. The camera moves as you scroll and drifts with the
+My personal portfolio, hosted at [biradhwaj-pf.vercel.app](https://biradhwaj-pf.vercel.app).
+
+It's a scroll-driven site built on a live WebGL scene: six chapters walking up
+a misty hillside at night. The camera moves as you scroll and drifts with the
 pointer; every chapter hands its foreground to the next. The whole world —
-concrete, granite, grass, rock, the mist, the moon — is generated procedurally
-at runtime in Three.js. No photographs and no video anywhere in the scene; the
-only images on the page are the project screenshots.
+concrete, granite, grass, rock, the mist, the moon, the lake — is generated
+procedurally at runtime in Three.js, built from scratch for this site. No
+photographs and no video anywhere in the scene; the only images on the page
+are the project screenshots and my portrait.
 
 ## Getting Started
 
@@ -100,321 +103,15 @@ fixed, bottom-anchored plane standing in front of both the layout and the nav;
 the outgoing stage blurs away and returns home. Placement is keyed off
 `[data-fg]`, not the section id, because the stage stops being a descendant of
 its own section while it is live. The class names (`.fg-wall`, `.fg-lantern`)
-are placement slots inherited from the reference, not descriptions of what now
-stands in them.
+are placement slots, not descriptions of what stands in them — a naming
+convention carried over from an earlier layout pass, kept because renaming a
+CSS hook is pure risk for zero benefit.
 
 **The wordmark.** "DESIGN" in the hero is not text — it is six textured planes
 in the 3-D scene, measured and scaled to the frame width in `layoutWord()` so it
 always reaches the viewport edges. The string and its tracking are both in
 `buildWordmark()`; tracking is derived from the letter count, because four
 letters need to be spaced out to reach the edge and six do not.
-
-## What changed from the reference
-
-The engine is the reference's and is what makes the page work: the camera walks
-a Catmull-Rom spline through the world as you scroll, the rig carries a damped
-pointer parallax, each chapter hands its foreground plane to the next, and the
-project plates are live windows cut into the scene. None of that was touched.
-
-What changed is what the walk goes *past*. The reference was a Kyoto temple
-precinct, and a portfolio's background should not be a picture of a specific
-place — the eye reads the place before it reads the page in front of it. So the
-architecture and the seasonal dressing came out and the landscape stayed:
-
-- **The worship hall → a stone terrace.** The two-storey Sanmon, its flaring
-  tiled roofs, bracket bands, finials and name plaque are gone. Three courses of
-  board-formed concrete step back as they rise, with a lit lip along the front
-  edge. The lip matters: every exposure decision on the page is balanced against
-  a warm source at that depth, so the light had to stay even though the thing it
-  was coming out of did not.
-- **The stairs are gone, and so is everything they climbed to.** There was a
-  forty-riser flight, a seven-unit podium for it to reach, and a stone coping
-  around the top of that. All three survived from the reference because the
-  camera walk climbs them — but they existed to serve a building removed
-  several passes earlier, and once the range behind them became real geometry
-  they were the only thing left in frame asserting that this is a *site*
-  rather than a landscape. A flight of stairs is a very strong figure: the eye
-  follows it whether or not anything is at the top, and it kept turning the
-  mountains into scenery behind an approach. The valley floor now runs unbroken
-  from the near grass out to the foot of the range, where the height field
-  flattens back into it and the junction is filled with haze.
-
-  The warm light stayed, because every exposure decision on the page — the
-  scrims, the text shadows, the bloom threshold — is balanced against a source
-  at that depth, and removing the thing the light came out of is not the same
-  as removing the light. It is a tight pool low in the mist now, plus the six
-  lanterns re-sited from the stair cheeks on to the flat court, where they
-  splay and shrink as they recede and give the eye a path to follow instead of
-  a flight to climb.
-
-- **The range is real geometry.** `buildRange()` — one displaced height field,
-  opaque, depth-tested like anything else in the scene: 141k triangles, one
-  draw call, built once.
-
-  Four generations of it were painted billboards, and they can be made to read
-  as mountains, but the trick has costs that show. Every layer needs an
-  explicit `renderOrder`, because transparent depth-write-off planes stack in
-  draw order and one wrong index paints the far ridge over the near one — that
-  bug shipped twice. The parallax has to be faked, because a plate two hundred
-  units out will not answer a pointer drift of under a unit. And nothing on
-  them can catch the light, because there is no surface there to catch it: the
-  moon hung behind the range and every crest in front of it stayed exactly as
-  dark as it was drawn. All three problems are gone. The parallax is true
-  perspective — 105 px of measured differential between a crest ninety units
-  out and one at a hundred and ninety, over the walk — and the moon rims the
-  crests because there is something there for it to rim.
-
-  The height field keeps the two ideas the billboard passes arrived at,
-  promoted from a line to a surface, and adds one more:
-
-  1. **A ridged multifractal, not noise.** Plain fbm has no summits in it, only
-     bulges. Each octave is folded at `1 − |noise|` so its zero crossings
-     become creases, squared to sharpen the crease into a summit, and weighted
-     by the octave above it so fine detail only lands where there is already
-     mass to carry it. `x` is sampled at about half the frequency of `z`, which
-     stretches the forms crosswise so they arrive as ridge *lines* across the
-     view rather than isolated cones.
-  2. **The angle of repose is what makes it rock.** Loose rock will not stand
-     steeper than about a third, so real flanks are straight and real profiles
-     are triangles, and the hollows between them are filled with what came off
-     them. Four sweeps across the grid lift every sample to at least its
-     neighbour minus one slope step. It only ever raises, so summits stay where
-     the noise put them and the ground between them straightens. Without this
-     pass the field is rounded lumps and reads as **cloud** — that was the
-     single most-repeated failure across every version of this.
-  3. **The repose slope has to scale with the amplitude**, and this is the most
-     destructive thing to get wrong here. The sweeps fill outward until the
-     slope runs out, so a summit of height A reaches `A / slope` before it
-     stops. At `.25` against a range fifty-five units tall that is 220 units of
-     fill — wider than the visible frame — so every summit's cone merged into
-     its neighbours' and the range arrived as one smooth mound with a valley in
-     it. Not a mountain: a dune. The slope wants to be about A over half the
-     crest wavelength. Measured, far crests went from min 48 / max 71 (a
-     plateau) at `.25` to min 25 / max 66 at `1.15`.
-
-  Two more things were needed to make it sit in the frame:
-
-  - **The vertex colours are authored as display values and converted.** A
-     vertex colour is consumed as *linear* light, so writing `.15` asks for a
-     mid-grey near `.43` on screen. The first pass did exactly that and the
-     range came back as a pale flat wall across the middle of the frame — four
-     times too light, which flattened every tonal step in the shading model at
-     once. Shading is baked per vertex rather than lit at runtime, which is
-     free (nothing here moves, no light near it changes) and also means the
-     range cannot be blown out by the six warm point lights down on the court.
-  - **Aerial perspective is a mix toward pale haze, not scene fog.** `FogExp2`
-     at `0.0168` is effectively total by a hundred units and its colour is
-     almost black, so it would take the range out rather than push it back.
-     Distance lifts shadows; it does not darken them. The first haze curve
-     saturated at 96% by two hundred units — the range *lives* between ninety
-     and two hundred, so the whole thing arrived as one flat wash with a 24%
-     luminance spread. The curve has to do its work inside that window.
-
-- **The ground is a lake, and its surface is real geometry.** `buildWater()`.
-  A five-wave Gerstner swell displaces an actual grid (`WATER_VS`,
-  `waterGrid()`); it is not a flat plane wearing a normal map. That distinction
-  is the difference between water you look *at* and water you look *along* — a
-  normal map can light a surface convincingly but it cannot occlude, cannot
-  break a reflection across a crest, and cannot put anything on the horizon.
-  The rig sits barely two units above the waterline for a third of the page, so
-  all three matter.
-
-  Gerstner rather than a sum of sines because a sine surface has round crests
-  *and* round troughs, which is the one thing water never has. Gerstner also
-  displaces horizontally, bunching vertices toward the crest, and that alone is
-  the difference between a rolling swell and a quilted blanket. The normal is
-  the closed analytic form from GPU Gems 1 ch.1, not a finite difference — which
-  matters because the grid is deliberately non-uniform and a differenced normal
-  would change character between the fine near cells and the coarse far ones.
-
-  On top of the geometry, four things:
-
-  1. **A real planar reflection.** The mountains and the moon have to be *in*
-     the surface; shading a flat plane is no substitute. The scene is rendered
-     a second time from the camera mirrored through the water plane into its
-     own half-resolution half-float buffer, and the surface samples that
-     buffer projectively. Reflecting a camera basis reverses its handedness —
-     the mirror camera's right vector comes out negated, which is why the
-     lookup has to go through *its* projection and view matrices rather than
-     main-camera screen UV.
-  2. **Fresnel.** Water seen from above is nearly black; water at a grazing
-     angle is nearly a mirror. That ramp (Schlick, with water's real 2%
-     normal-incidence reflectance) is the strongest "this is a liquid" cue
-     there is, and it is what makes the far half of a lake bright and the near
-     half dark. Without it a reflective plane reads as polished stone — the
-     exact failure this scene had already suffered once.
-  3. **The moon path.** A specular lobe against a rippled normal is physically
-     what a glitter track *is*: the small share of wave facets momentarily
-     tilted to send the moon at the eye. Two lobes, one tight for the sparkle
-     and one wide for the sheen around it.
-  4. **Foam on the breaking crests**, hung on the Gerstner *folding* term rather
-     than on a height threshold. That sum is the same one driving the normal's
-     y component; when it approaches 1 the surface is pinching to a point —
-     mathematically where the wave would self-intersect, physically where a real
-     wave whitens — so it is exactly the right signal, and it is free.
-
-  Below the swell, the ripple detail is still a sum of sinusoids whose wave
-  numbers are whole cycles across the plate, which is what makes the normal map
-  tile seamlessly; amplitude falls as 1/k, roughly how real wave energy
-  distributes across scales, and that is what stops it looking like corrugated
-  iron. Three octaves scroll on different headings, and the finest is attenuated
-  with distance — without that it aliases into static fizz about forty units out
-  and the lake turns to sandpaper. The swell and the ripple texture are built on
-  the same 1/k rule on purpose: they are two ends of one spectrum.
-
-  **The grid is graded, and that is what makes displaced geometry affordable
-  here at all.** The plate has to be enormous — 600 across, from 220 units
-  behind the rig to 380 in front — because its far edge must never enter frame
-  and nothing may show through it. Uniform cells fine enough to carry an
-  11-unit wave over all of that would be ~900k vertices, almost every one of
-  them past the fog. Spacing is graded toward the rig instead (`waterGrid()`):
-  about half a unit under the camera, 1.3 at the foot of the near slope, 1.8 at
-  a hundred units out, coarsening to three beyond. 30k vertices for the same
-  silhouette, finer than the uniform grid exactly where it counts. Measured
-  cost: **0.07 ms** on a scene pass that runs 0.68.
-
-  **Three numbers are load-bearing and there is not much room above them.**
-  `uSwell` and `uChop` are the budget against Gerstner's self-intersection
-  limit: the wave set sums to 0.298 at 1/1, and the shipped 1.25/1.5 puts it at
-  0.56 — steeper and the troughs start reading as creases rather than water.
-  Total crest height is then 0.88 against a rig that comes down to 2.1 above the
-  surface; measured at the craft waypoint that puts a near crest at −5.8° of
-  elevation against a frame bottom of −6.6°, so the swell grazes the bottom edge
-  and no more. Double it and there is water across the mountains, which is the
-  whole composition. Both are overridable as `?swell=` / `?chop=`.
-
-  **The foam thresholds are normalised, and this was a real bug once.** `vFold`
-  and `vH` leave the vertex shader divided by their own maxima, so they run
-  −1..1 whatever `uSwell` and `uChop` are set to. The first version thresholded
-  the *raw* fold at 0.30 when the set could only ever reach 0.298 — so the
-  folding term contributed nothing anywhere, and foam was silently running on
-  the height term alone at a third of its intended strength. An absolute
-  threshold against a sum that scales with the tuning knobs is correct at one
-  setting and dead at every other.
-
-  The reflection is sampled at the **mean plane**, not at the crest. A planar
-  reflection is only exact for points *on* the mirror, so feeding it the
-  displaced height smears the reflection by the wave amplitude; dropping y back
-  to the plane keeps the lookup exact and lets the normal nudge — a real optical
-  effect, not an error term — carry the distortion. For the same family of
-  reasons the ripple detail is sampled on the *undisplaced* position: the chop
-  drags the surface horizontally, and a detail map pinned to where the water
-  ended up slides across it, while one pinned to where it came from rides along.
-
-  The surface is **opaque**. A dark lake shows nothing of its bed, so
-  transparency buys nothing and costs the guarantee that no sky can leak
-  through the seam at the foot of the range.
-
-  Two things worth knowing before editing it. The reflection buffer sizes
-  itself inside the render function rather than only at build time, because the
-  canvas can legitimately be zero-sized when the build jobs run (background
-  tab, collapsed pane, container not yet laid out) and a buffer sized from a
-  zero canvas clamps to 16x16 and stays there. And the single global clipping
-  plane is installed once and only *moved*, never added or removed: the count
-  of clipping planes is baked into every shader program, so toggling it per
-  frame would recompile the whole scene twice a frame.
-
-  `?refl=0` disables the reflection pass; the low-quality path disables it
-  automatically, keeping Fresnel and the moon path, which is most of the read.
-
-- **The ground is one plane, and it is deliberately enormous.** The floor is
-  600 x 600 rather than the reference's 150 x 150, and this is not padding — it
-  is the fix for the longest-running visual bug in this scene. The range is a
-  height field sunk below `y = 0` for its first fifty units so it cannot
-  z-fight the floor, and it only climbs back above zero sixty to a hundred
-  units out. The floor used to stop at `z = -93`. Between the two there was a
-  strip of ground that **nothing covered** — measured at the hero waypoint,
-  screen rows 0.60 to 0.66 hit no geometry at all — so the sky showed through
-  the floor.
-
-  A straight-edged band of pale sky lying between dark ground and dark
-  mountains is, to the eye, a lit dock seen end-on; the lanterns standing along
-  it finished the illusion. It survived three separate attempts to remove it,
-  because every attempt went after the *lights* — which were innocent. The
-  give-away, once measured, was unambiguous: the band's upper edge was
-  perfectly horizontal across the entire frame, to the pixel. Terrain never
-  does that. A plane's edge always does.
-
-  The plane now extends 300 units past the range's footprint in every
-  direction, so the junction is the terrain's own `y = 0` contour, following
-  the hills. Verified the way it should have been the first time: of the 1525
-  camera rays (six waypoints x five aspect ratios) that overshoot the plane
-  near the horizon, every one is intercepted by the terrain's *minimum* height
-  before it could reach sky. The band is not fixed at one camera — it is
-  geometrically unreachable.
-
-- **The moon hangs in a pass.** The range has to be tall, because the last two
-  chapters look straight up the valley and a low range arrives there as a line
-  on the horizon — but a tall range crowds the moon, which was the complaint
-  about the version before this one. So it is tall everywhere except along the
-  moon's own bearing, where the amplitude is notched back and the crest drops
-  into a saddle. Not a dodge: it is what a landscape photographer does, which
-  is put the light in the gap. The notch is angular rather than a fixed `x`, so
-  it tracks the moon's azimuth at every depth instead of shearing across the
-  field.
-
-- **The gate is gone.** It was rebuilt once as a plain rectangular frame, which
-  was still wrong — two uprights and a lintel at the foot of a stone flight is
-  the torii silhouette however plainly you draw it.
-- **The blood moon → a pale one.** The red came entirely from a colour
-  multiplier on a neutral texture, so the disc only needed re-tinting; its two
-  red lights are now cool. It sits at `z = −166`, inside the range rather than
-  in front of it, and it is depth-tested — while the range was four transparent
-  plates the disc had to ignore depth and be sorted by hand between them, and
-  that hand-sorting was wrong twice, because a `renderOrder` putting the disc
-  behind one ridge necessarily puts it behind every ridge drawn at the same or
-  a later order whatever their actual distance.
-- **There is no warm light in the scene at all, and no lamp posts.** This took
-  five passes to get right, and every pass but the last was aimed at the wrong
-  thing.
-
-  The complaint each time was a "dock": a flat, pale, lit surface running across
-  the valley with lights along it. I removed a glow plane, then a mist band,
-  then the floor's far edge — symptoms, all of them — and it kept coming back,
-  because the dock was never one object. It was an *assembly*: a flat ground
-  plane in mid-grey wet-flagstone (`0x69757a`, roughness .74, a trace of
-  metalness) plus eight lit lamp posts standing on it in a receding double row
-  plus three warm point lights down at ground level pooling on it. Each part is
-  defensible on its own. Together they are a promenade, and no amount of
-  re-tinting a promenade turns it into a landscape.
-
-  So: the eight posts are gone, the three warm ground lights are gone, and the
-  ground is `0x1b2226` at roughness .96 with zero metalness — near-black and
-  fully diffuse, returning almost nothing. The moon is the only light source
-  left; the six remaining lights are all cool. Verified by inventory rather
-  than by eye, because the artefact was global geometry and therefore appeared
-  in every chapter at once: zero warm lights in the scene, and the only
-  warm-emitting mesh left anywhere is the drifting leaf fall.
-
-  The general lesson, since it cost five attempts: **a flat plane with lights
-  on it reads as built, whatever it is textured with.** Fix the assembly, not
-  the tint.
-- **The near bough** was tinted six parts red to one part green — the most
-  saturated object on the page, four metres off the lens. It is green now.
-- **The leaf fall** was an emissive red at 260 instances, which read as embers.
-  Muted amber, 170.
-- **Foreground cut-outs** are ground cover only: grass, planting, rock, pine,
-  hill. The tiled gatehouse wall, the stone lantern, the shrine ruins, the
-  sakura branch and the maple spray are deleted from the repo.
-- **The mark** was a torii; it is a frame around a vermilion disc.
-- Japanese text labels were dropped throughout. The scene can be what it is;
-  Japanese subtitles on someone's own projects would be costume.
-
-The class names in the near plane (`.fg-wall`, `.fg-sakura`) are inherited
-placement slots, not descriptions — `.fg-wall` means "wide, hard against an
-edge" and holds planting; `.fg-sakura` means "sweeping in from a lower corner"
-and holds grass.
-
-### One thing that was tried and reverted
-
-The background was briefly replaced wholesale with ThreeUI's
-`SylvaLivingWorldScene` — a procedural moss-root world, no cultural reading at
-all. It was abandoned because it is a *fixed hero composition*: one camera at
-one distance, geometry laid out against a 1600×880 reference frame. It has
-pointer parallax and its own scan-light entrance, but nothing that survives a
-camera walking through it, so adopting it meant losing the scroll-driven
-transitions that are the best thing about this page. Kept here as a note so the
-option is not re-litigated: the two are not interchangeable.
 
 ## Debug and review flags
 
@@ -459,31 +156,22 @@ Copy is all in `index.html`. The things that are *not* markup:
 ## Known follow-ups
 
 - **`assets/work/gridpe.png` is 808×556 and `design-system.png` is 718×588** —
-  both come off the Framer CDN as 8-bit palettised PNGs. They hold up at the
-  sizes used, but higher-resolution exports would sharpen the two plates that
-  carry them, the lead plate especially.
-- `secret-pathways-assets/` is an assets directory; it is referenced from `index.html` and from `css/scene.css`.
-- `secret-pathways-assets/generated/*.webp` are reference stills and are no longer used by anything — safe to delete.
-- **A downloaded terrain could drive the range instead of the noise.** Two
-  Sketchfab models were suggested for this — `snowy-terrain` by Kubocarte and an
-  Iceland landscape scan. Neither was used, for three reasons: the download
-  needs a Sketchfab account, `snowy-terrain` is CC-BY so using it puts an
-  attribution line on the page, and both are baked-lit *daylight* assets, which
-  in a night scene graded through a bloom chain against `#05070a` produce a
-  correct-looking object that is visibly pasted on to a picture lit by different
-  rules. But `snowy-terrain` also ships a **displacement map intended for flat
-  planes**, and that is exactly the input `buildRange()` already builds for
-  itself. Swapping the procedural field for a loaded heightmap is a contained
-  change — read the PNG into a canvas, sample it in place of the ridged
-  multifractal, and keep the repose sweeps, the baked shading and the haze
-  exactly as they are. No mesh loader, no FBX, no megabytes of baked albedo.
-- **The trees are still `buildMaple`.** Their canopy is de-reddened to a muted
-  brown and nothing about the silhouette is specifically Japanese, but the
-  builder is a maple and the leaf texture is palmate. If they still read wrong,
-  the honest fix is a different canopy generator rather than another re-tint —
-  `buildMaple(seed, x, z, scale)` in `js/scene.js` is self-contained and its five
-  call sites are all in one `JOBS` entry.
-- **`buildLantern()` is now dead code.** All eight call sites are gone (see the
-  note on warm light above); the function itself is left in place because it is
-  self-contained and harmless, but nothing references it. Delete it if the file
-  needs slimming.
+  both hold up at the sizes used, but higher-resolution exports would sharpen
+  the two plates that carry them, the lead plate especially.
+- `secret-pathways-assets/` is an assets directory; it is referenced from
+  `index.html` and from `css/scene.css`.
+- `secret-pathways-assets/generated/*.webp` are leftover preview stills and are
+  no longer used by anything — safe to delete.
+- **A downloaded heightmap could drive the range instead of procedural noise**,
+  if a specific real-world silhouette is ever wanted. `buildRange()` already
+  builds its own height field on a canvas before sampling it, so swapping the
+  source for a loaded PNG is a contained change — sample the image in place of
+  the ridged multifractal and keep the repose sweeps, the baked shading and the
+  haze exactly as they are.
+- **`buildMaple()`** generates the near-frame trees; it is self-contained and
+  its five call sites are all in one `JOBS` entry, so a different canopy shape
+  is a self-contained swap if one is ever wanted.
+- **`buildLantern()` is dead code.** Every call site was removed once the scene
+  moved to cool moonlight as its only source; the function itself is left in
+  place because it is self-contained and harmless, but nothing references it.
+  Delete it if the file needs slimming.
