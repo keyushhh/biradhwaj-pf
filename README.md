@@ -7,10 +7,6 @@ concrete, granite, grass, rock, the mist, the moon — is generated procedurally
 at runtime in Three.js. No photographs and no video anywhere in the scene; the
 only images on the page are the project screenshots.
 
-Adapted from the authored ThreeUI `KageLandingPage` reference. The engine and
-its motion are that reference's, intact. The content, the objects the walk goes
-past, and a portfolio CSS layer on top are not.
-
 ## Getting Started
 
 ### Local Development
@@ -36,7 +32,7 @@ npm run preview
 
 ### Deploying to Vercel
 
-The project is pre-configured for **Vercel** with optimized build settings and caching headers in [`vercel.json`](file:///Users/biradhwaj/Desktop/biradhwaj-kage/vercel.json):
+The project is pre-configured for **Vercel** with optimized build settings and caching headers in `vercel.json`:
 
 1. Push your repository to GitHub.
 2. Go to [vercel.com/new](https://vercel.com/new) and import the `biradhwaj-pf` repository.
@@ -49,9 +45,9 @@ The project is pre-configured for **Vercel** with optimized build settings and c
 
 ```
 index.html                    all markup and copy — the content lives here
-css/kage.css                  the authored stylesheet, unmodified
-css/portfolio.css             every deviation from it, loaded after
-js/kage.js                    the engine: textures, world, camera rig, cloth, post
+css/scene.css                 the base 3D scene stylesheet
+css/portfolio.css             portfolio overlay stylesheet, loaded after
+js/scene.js                   the engine: textures, world, camera rig, cloth, post
 assets/work/                  project screenshots and the portrait
 secret-pathways-assets/
   fonts.css                   Onest and the Wordmark face, base64-inlined
@@ -63,9 +59,8 @@ secret-pathways-assets/
 Nothing is fetched from a CDN. Fully self-contained and static — any file host
 will serve it.
 
-`css/kage.css` is deliberately untouched so the reference layer stays readable;
-`css/portfolio.css` holds every change and wins on source order. If something
-looks wrong, that second file is where to look first.
+`css/scene.css` provides the scene structure and foundations;
+`css/portfolio.css` holds portfolio-specific overrides.
 
 ## The six chapters
 
@@ -289,7 +284,7 @@ option is not re-litigated: the two are not interchangeable.
 | `?post=0` / `?shadow=0` | Disable bloom / shadows |
 | `?dpr=1` / `?adapt=0` | Pin pixel ratio / lock the adaptive resolution governor |
 
-`window.__kage` exposes the rig, world, camera, renderer and scroll anchors.
+`window.__scene` exposes the rig, world, camera, renderer and scroll anchors.
 
 ## Behaviour worth knowing before editing
 
@@ -312,8 +307,8 @@ Copy is all in `index.html`. The things that are *not* markup:
 
 | To change | Edit |
 | --- | --- |
-| The hero wordmark | `buildWordmark()` in `js/kage.js` |
-| A chapter's camera | `CAM` in `js/kage.js` |
+| The hero wordmark | `buildWordmark()` in `js/scene.js` |
+| A chapter's camera | `CAM` in `js/scene.js` |
 | The progress rail tooltips | `names` in `wireNav()` |
 | A card's live view | `defs` in `buildCards()` |
 | A project screenshot | the `.card:nth-child(n) .card-fr` rule in `css/portfolio.css` |
@@ -328,10 +323,8 @@ Copy is all in `index.html`. The things that are *not* markup:
   both come off the Framer CDN as 8-bit palettised PNGs. They hold up at the
   sizes used, but higher-resolution exports would sharpen the two plates that
   carry them, the lead plate especially.
-- `secret-pathways-assets/` is an inherited directory name and a fair rename
-  candidate; it is referenced from `index.html` and from `css/kage.css`.
-- `secret-pathways-assets/generated/*.webp` are the reference's temple stills
-  and are no longer used by anything — safe to delete.
+- `secret-pathways-assets/` is an assets directory; it is referenced from `index.html` and from `css/scene.css`.
+- `secret-pathways-assets/generated/*.webp` are reference stills and are no longer used by anything — safe to delete.
 - **A downloaded terrain could drive the range instead of the noise.** Two
   Sketchfab models were suggested for this — `snowy-terrain` by Kubocarte and an
   Iceland landscape scan. Neither was used, for three reasons: the download
@@ -349,7 +342,7 @@ Copy is all in `index.html`. The things that are *not* markup:
   brown and nothing about the silhouette is specifically Japanese, but the
   builder is a maple and the leaf texture is palmate. If they still read wrong,
   the honest fix is a different canopy generator rather than another re-tint —
-  `buildMaple(seed, x, z, scale)` in `js/kage.js` is self-contained and its five
+  `buildMaple(seed, x, z, scale)` in `js/scene.js` is self-contained and its five
   call sites are all in one `JOBS` entry.
 - **The lantern posts** are the other judgement call, and they now carry more
   weight than they did: with the flight gone they are the only built thing left

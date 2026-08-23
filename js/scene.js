@@ -1,5 +1,5 @@
 /* =====================================================================
-   KAGE — a live Kyoto mountain temple, after dark.
+   Scene Engine — 3D WebGL runtime.
    Everything on this page is generated at runtime: no photographs,
    no video, no external assets beyond three.js and two subset fonts.
    ===================================================================== */
@@ -3784,7 +3784,7 @@ function boot() {
     let r;
     try { r = j[1](); }
     catch (err) {
-      console.error('[kage] job "' + j[0] + '" failed', err);
+      console.error('[scene] job "' + j[0] + '" failed', err);
       if (i <= 1) return fallback(err);          /* no renderer, no scene */
     }
     (r && r.then) ? r.then(done, done) : done();
@@ -3798,7 +3798,7 @@ function fallback(err) {
   document.body.classList.remove('is-locked');
   preEl.classList.add('done');
   $$('[data-rv], .mask-line').forEach(e => e.classList.add('rv-in'));
-  window.__kage = window.__secret = { fallback: true, error: String(err && err.message || err) };
+  window.__scene = window.__secret = { fallback: true, error: String(err && err.message || err) };
 }
 
 function start() {
@@ -3835,7 +3835,7 @@ function start() {
   running = true; tPrev = performance.now();
   INTRO.t0 = shot !== null ? 0 : (REDUCE ? performance.now() - 4000 : performance.now());
   queue();
-  window.__kage = window.__secret = { RIG: RIG, WORLD: WORLD, WORD: WORD, CAM: CAM, POST: POST, renderer: renderer, scene: scene, camera: camera, anchors: () => anchors };
+  window.__scene = window.__secret = { RIG: RIG, WORLD: WORLD, WORD: WORD, CAM: CAM, POST: POST, renderer: renderer, scene: scene, camera: camera, anchors: () => anchors };
 }
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(boot, 0);

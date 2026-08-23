@@ -192,7 +192,7 @@ h1,h2,h3{ font-weight:400; margin:0; letter-spacing:-.005em; }
 }
 .peek-fr{ display:block; aspect-ratio:16/10;
   background:linear-gradient(180deg, rgba(3,6,9,.04) 24%, rgba(3,6,9,.48) 100%),
-    url('../secret-pathways-assets/generated/kage-sanmon-preview.webp') center / cover no-repeat;
+    url('../secret-pathways-assets/generated/sanmon-preview.webp') center / cover no-repeat;
   outline:1px solid rgba(223,231,224,.16); outline-offset:-1px;
   box-shadow:0 34px 70px -30px rgba(0,0,0,.9); transition:outline-color .5s; }
 .peek:hover{ transform:translate3d(0,-5px,0); }
@@ -275,17 +275,17 @@ h1,h2,h3{ font-weight:400; margin:0; letter-spacing:-.005em; }
 .card:nth-child(1) .card-fr{
   background:
     linear-gradient(180deg,rgba(3,6,9,.04) 36%,rgba(3,6,9,.72) 100%),
-    url('../secret-pathways-assets/generated/kage-approach.webp') center / cover no-repeat;
+    url('../secret-pathways-assets/generated/approach.webp') center / cover no-repeat;
 }
 .card:nth-child(2) .card-fr{
   background:
     linear-gradient(180deg,rgba(3,6,9,.06) 36%,rgba(3,6,9,.74) 100%),
-    url('../secret-pathways-assets/generated/kage-lantern-court.webp') center / cover no-repeat;
+    url('../secret-pathways-assets/generated/lantern-court.webp') center / cover no-repeat;
 }
 .card:nth-child(3) .card-fr{
   background:
     linear-gradient(180deg,rgba(3,6,9,.05) 36%,rgba(3,6,9,.74) 100%),
-    url('../secret-pathways-assets/generated/kage-moonwater.webp') center / cover no-repeat;
+    url('../secret-pathways-assets/generated/moonwater.webp') center / cover no-repeat;
 }
 .card-fr::after{ content:''; position:absolute; inset:0;
   background:linear-gradient(transparent 46%, rgba(4,6,9,.80)); pointer-events:none; }
@@ -626,7 +626,7 @@ body[data-layout-footer="b"] .foot-grid > div:nth-child(n+3){
 body[data-layout-footer="b"] .foot-base{ display:grid; grid-template-columns:1fr auto 1fr; }
 body[data-layout-footer="b"] .foot-base span:last-child{ text-align:right; }
 
-/* ================================================= foreground layers (KAGE)
+/* ================================================= foreground layers
    The transparent PNG library in secret-pathways-assets/foreground/png is
    introduced as a near plane. Each section carries one .fg box holding a few
    cut-outs that stand between the live sanctuary and the reading: the scene

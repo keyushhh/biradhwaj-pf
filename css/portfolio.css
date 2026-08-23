@@ -1,11 +1,9 @@
 /* =====================================================================
    PORTFOLIO LAYER
 
-   kage.css is left exactly as authored. Everything the portfolio content
-   needs that the temple content did not is collected here, loaded after it,
-   and wins on source order at equal specificity. Keeping the two apart means
-   the reference layer stays readable and every deviation from it is in one
-   place.
+   scene.css contains base styling. Everything the portfolio content
+   needs is collected here, loaded after it, and wins on source order
+   at equal specificity.
    ===================================================================== */
 
 /* ------------------------------------------------------------ small parts */
