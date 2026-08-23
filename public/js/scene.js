@@ -1367,9 +1367,9 @@ function buildShell() {
   /* floor + podium */
   const fT = texFloor();
   const floorMat = new THREE.MeshStandardMaterial({
-    map: tx(fT.map, { wrap: THREE.RepeatWrapping, repeat: [7, 7], aniso: 16 }),
-    normalMap: tx(fT.normal, { wrap: THREE.RepeatWrapping, repeat: [7, 7], srgb: false, aniso: 16 }),
-    roughnessMap: tx(fT.rough, { wrap: THREE.RepeatWrapping, repeat: [3.4, 3.4], srgb: false }),
+    map: tx(fT.map, { wrap: THREE.RepeatWrapping, repeat: [28, 28], aniso: 16 }),
+    normalMap: tx(fT.normal, { wrap: THREE.RepeatWrapping, repeat: [28, 28], srgb: false, aniso: 16 }),
+    roughnessMap: tx(fT.rough, { wrap: THREE.RepeatWrapping, repeat: [13.6, 13.6], srgb: false }),
     normalScale: new THREE.Vector2(.30, .30),
     /* The court used to carry a planar mirror and this was tuned to feed it —
        near-polished, and metal enough to hold a reflection. With the mirror
@@ -1378,8 +1378,29 @@ function buildShell() {
        reflecting. */
     roughness: .74, metalness: .06, color: 0x69757a
   });
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(150, 150), floorMat);
-  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -18); floor.receiveShadow = true;
+  /* Big enough that its own far edge can never be seen, which the 150-unit
+     version emphatically was not.
+
+     The range is a height field that is deliberately sunk below y = 0 for its
+     first fifty units so it cannot z-fight this plane, and it only climbs back
+     above zero somewhere around sixty to a hundred units out. This plane used
+     to stop at z = -93. Between the two there was a strip of ground that
+     *nothing* covered — measured at the hero waypoint, screen rows 0.60 to
+     0.66 hit no geometry at all — so the sky showed through the floor. A
+     straight-edged band of pale sky lying between dark ground and dark
+     mountains is exactly a lit dock seen end-on, and the lanterns standing
+     along it completed the illusion. The give-away was that the upper edge of
+     that band measured perfectly horizontal across the entire frame: terrain
+     never does that, a plane's edge always does.
+
+     600 x 600 centred well back covers the whole footprint of the range and
+     then some, so the junction is now the terrain's own y = 0 contour —
+     irregular, following the hills — instead of a ruled line. Scene fog
+     (near-black, effectively total by a hundred units) takes the far half of
+     the plane down to nothing on its own, so there is no horizon edge either.
+     Repeats scale with the size to hold texel density. */
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), floorMat);
+  floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -80); floor.receiveShadow = true;
   scene.add(floor);
   WORLD.floor = floor; WORLD.floorMat = floorMat;
 
@@ -3443,10 +3464,11 @@ function buildCards() {
        the one view in the set that faces out of the sanctuary rather than into
        it, so four windows do not read as four angles on the same wall */
     { p: [0.0, 8.20, -30.0], t: [0.4, 1.20, -4.0], fov: 44 },   /* the way back   */
-    /* the banner plate is twice as wide as it is tall, so it gets the one
-       establishing shot in the set — a wide lens far enough back to hold the
-       whole approach, which is the only composition that survives that crop */
-    { p: [0.0, 5.00, 7.00], t: [0.0, 8.00, -30.0], fov: 52 },   /* the approach   */
+    /* index 4 used to be a wide establishing shot for the full-width "Mockup"
+       banner plate. That plate is gone, so the hero portrait window moves down
+       into its slot and this array stays the same length as the set of
+       [data-view] elements — the lookup is by index, so a stale entry here
+       would silently hand the wrong camera to the wrong frame. */
     { p: [0.6, 3.40, -12.0], t: [0, 12.0, -40.0], fov: 26 }     /* hero window    */
   ];
   $$('[data-view]').forEach(el => {

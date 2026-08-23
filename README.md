@@ -57,7 +57,7 @@ will serve it.
 |---|---------|--------|
 | 0 | Hero — headline, four metrics, portrait window | `CAM[0]` |
 | 1 | `#about` — positioning, figures, experience table | `CAM[1]` |
-| 2 | `#work` — five project plates | `CAM[2]` |
+| 2 | `#work` — four project plates | `CAM[2]` |
 | 3 | `#skills` — six capability plates | `CAM[3]` |
 | 4 | `#contact` — the ask, and the email | `CAM[4]` |
 | 5 | Footer | `CAM[5]` |
@@ -72,8 +72,10 @@ without adding a waypoint will break the walk.
 **Live card viewports.** Each project plate is a hole punched in the page: the
 same scene rendered from its own camera into its own buffer, blitted into the
 composite at the element's screen rect. The `defs` array in `buildCards()` holds
-those cameras and `data-view="n"` picks one. There are six — five plates plus
-the hero portrait window.
+those cameras and `data-view="n"` picks one. There are five — four plates plus
+the hero portrait window. The lookup is by index, so `defs` must stay the same
+length as the set of `[data-view]` elements: a stale entry hands the wrong
+camera to the wrong frame silently.
 
 **The cloth.** On any device with a pointer, each plate's `background-image` is
 lifted onto a cloth simulation and hung as fabric you can brush with the cursor.
@@ -208,6 +210,32 @@ architecture and the seasonal dressing came out and the landscape stayed:
      and two hundred, so the whole thing arrived as one flat wash with a 24%
      luminance spread. The curve has to do its work inside that window.
 
+- **The ground is one plane, and it is deliberately enormous.** The floor is
+  600 x 600 rather than the reference's 150 x 150, and this is not padding — it
+  is the fix for the longest-running visual bug in this scene. The range is a
+  height field sunk below `y = 0` for its first fifty units so it cannot
+  z-fight the floor, and it only climbs back above zero sixty to a hundred
+  units out. The floor used to stop at `z = -93`. Between the two there was a
+  strip of ground that **nothing covered** — measured at the hero waypoint,
+  screen rows 0.60 to 0.66 hit no geometry at all — so the sky showed through
+  the floor.
+
+  A straight-edged band of pale sky lying between dark ground and dark
+  mountains is, to the eye, a lit dock seen end-on; the lanterns standing along
+  it finished the illusion. It survived three separate attempts to remove it,
+  because every attempt went after the *lights* — which were innocent. The
+  give-away, once measured, was unambiguous: the band's upper edge was
+  perfectly horizontal across the entire frame, to the pixel. Terrain never
+  does that. A plane's edge always does.
+
+  The plane now extends 300 units past the range's footprint in every
+  direction, so the junction is the terrain's own `y = 0` contour, following
+  the hills. Verified the way it should have been the first time: of the 1525
+  camera rays (six waypoints x five aspect ratios) that overshoot the plane
+  near the horizon, every one is intercepted by the terrain's *minimum* height
+  before it could reach sky. The band is not fixed at one camera — it is
+  geometrically unreachable.
+
 - **The moon hangs in a pass.** The range has to be tall, because the last two
   chapters look straight up the valley and a low range arrives there as a line
   on the horizon — but a tall range crowds the moon, which was the complaint
@@ -304,10 +332,6 @@ Copy is all in `index.html`. The things that are *not* markup:
 
 ## Known follow-ups
 
-- **The Mockup plate** (05 / 05) is a deliberate placeholder — a live window on
-  to the scene with no screenshot behind it. Give it a `background-image` in
-  `css/portfolio.css` and real copy in `index.html` when the case study is
-  written, and the cloth will pick it up with no other change.
 - **`assets/work/gridpe.png` is 808×556 and `design-system.png` is 718×588** —
   both come off the Framer CDN as 8-bit palettised PNGs. They hold up at the
   sizes used, but higher-resolution exports would sharpen the two plates that
