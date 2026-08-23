@@ -240,8 +240,6 @@ h1,h2,h3{ font-weight:400; margin:0; letter-spacing:-.005em; }
   -webkit-mask-image:linear-gradient(transparent, #000 44%);
           mask-image:linear-gradient(transparent, #000 44%);
 }
-#pathways::before{ background:radial-gradient(108% 64% at 50% 50%, rgba(4,7,10,.70), rgba(4,7,10,.44) 50%, rgba(4,7,10,0)); }
-#eternity::before{ background:radial-gradient(82% 58% at 50% 46%, rgba(4,7,10,.26), rgba(4,7,10,.66) 56%, rgba(4,7,10,.90) 82%, rgba(4,7,10,0)); }
 .foot::before{
   content:''; position:absolute; inset:0; z-index:-1; pointer-events:none;
   background:linear-gradient(rgba(4,7,10,.55), rgba(4,7,10,.94) 40%, rgba(4,7,10,.98));
@@ -309,49 +307,7 @@ h1,h2,h3{ font-weight:400; margin:0; letter-spacing:-.005em; }
 .on-cloth{ background:none !important; outline:0 !important; overflow:visible; }
 .on-cloth::after{ display:none; }
 
-/* ------------------------------------------------- the lights in the stills
-   The three plates each have one source in them — two blood moons and a lit
-   stone lantern — and they are the only warm thing in an otherwise cold set of
-   images. A glow laid over each one, screened so it adds light rather than
-   painting over it, is enough to make a flat still look like it is burning.
-
-   Two tracks per light, at durations that do not divide into each other: the
-   wrapper swells, the gradient inside it pulses. One track on its own reads as
-   a loop within a couple of seconds; two beating against each other do not
-   come back around inside the time anyone looks at a card.
-
-   The moon and the lantern are not the same event. A flame gutters — short,
-   irregular, deep — so the lantern's track is written unevenly by hand. A moon
-   only breathes through moving air, so the moons get a slow, shallow swell and
-   nothing more. Giving them both a flicker is what makes this kind of thing
-   look like a novelty; the difference is the whole effect. */
 .card-fr{ isolation:isolate; }        /* keep the screen blend inside the card */
-.glow{
-  position:absolute; z-index:1; pointer-events:none;
-  left:var(--gx); top:var(--gy); width:calc(var(--gr) * 2); aspect-ratio:1;
-  translate:-50% -50%;                /* leaves transform free for the swell */
-  mix-blend-mode:screen;
-  animation:glow-swell var(--gt2) var(--ease-io) infinite alternate;
-}
-.glow::before{
-  content:''; position:absolute; inset:0; border-radius:50%;
-  background:radial-gradient(closest-side, var(--gc1), var(--gc2) 40%, transparent 72%);
-  animation:glow-pulse var(--gt) var(--ease-io) infinite;
-}
-@keyframes glow-swell{ from{ transform:scale(.93); } to{ transform:scale(1.07); } }
-@keyframes glow-pulse{ from{ opacity:.78; } 50%{ opacity:1; } to{ opacity:.78; } }
-/* a flame does not breathe, it gutters */
-@keyframes glow-flame{
-  0%{ opacity:.74 }   6%{ opacity:.97 }  12%{ opacity:.63 }  19%{ opacity:.90 }
-  27%{ opacity:.55 }  34%{ opacity:.94 } 42%{ opacity:.71 }  51%{ opacity:1 }
-  58%{ opacity:.60 }  66%{ opacity:.88 } 74%{ opacity:.67 }  83%{ opacity:.96 }
-  91%{ opacity:.72 } 100%{ opacity:.74 }
-}
-.glow--flame::before{ animation-name:glow-flame; }
-.glow--flame{ animation-duration:var(--gt2); }
-@media (prefers-reduced-motion:reduce){
-  .glow, .glow::before{ animation:none; }
-}
 .no-webgl .card-fr{ background:linear-gradient(150deg,#101a1d,#0a0d10 62%,#1a0c0b); }
 /* If WebGL will not start, the page stays a page: the scene simply becomes a
    still, and the wordmark moves from the 3-D layer into the document. */
@@ -378,7 +334,7 @@ h1,h2,h3{ font-weight:400; margin:0; letter-spacing:-.005em; }
    declaration now rather than re-colouring one it used to inherit. */
 .no-webgl .hero::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:34%;
   pointer-events:none; background:linear-gradient(transparent, rgba(3,5,8,.72) 52%, rgba(3,5,8,.96)); }
-.no-webgl .sec::before, .no-webgl #pathways::before, .no-webgl #eternity::before{ background:none; }
+.no-webgl .sec::before{ background:none; }
 .card-lab{ position:absolute; left:16px; right:16px; bottom:14px; z-index:2;
   display:flex; align-items:flex-end; justify-content:space-between; gap:10px; }
 .card-lab b{ font-size:clamp(13px,1.15vw,17px); font-weight:400; letter-spacing:.02em; text-transform:uppercase; }
@@ -755,15 +711,10 @@ body[data-layout-footer="b"] .foot-base span:last-child{ text-align:right; }
 [data-fg="gate"] .fg-pine  { right:-4%; bottom:-46px; width:clamp(190px,21vw,370px); }
 [data-fg="gate"] .fg-grass { left:3%;   bottom:-150px; width:clamp(420px,60vw,1050px); }
 
-/* — II · still gardens: sakura and maple sweep in from the two lower corners
-     and carry their whole length, a lit lantern and a low bush hold the edges */
+/* — II · still gardens: grass sweeps in from the lower-left, a low bush holds
+     the right edge */
 [data-fg="pathways"] .fg-sakura { left:-6%;  bottom:-86px;  width:clamp(430px,50vw,880px); }
-[data-fg="pathways"] .fg-leaves { right:-6%; bottom:-62px;  width:clamp(330px,38vw,670px); }
-[data-fg="pathways"] .fg-lantern{ left:-1%;  bottom:-96px;  width:clamp(120px,13vw,215px); }
 [data-fg="pathways"] .fg-bush   { right:-4%; bottom:-38px;  width:clamp(250px,30vw,530px); }
-/* the lantern is the one lit object in the library — it keeps its ember */
-[data-fg="pathways"] .fg-lantern > img{ filter:saturate(.96) brightness(1); }
-[data-fg="pathways"] .fg-leaves > img{ transform-origin:100% 40%; }
 
 /* — III · sacred craft: basalt and a low wall fragment bracket the atlas and
      a stand of grass ties them together, all three below the plate grid */
@@ -788,7 +739,6 @@ body[data-layout-footer="b"] .foot-base span:last-child{ text-align:right; }
      framing layers step down rather than crowd it */
   [data-fg="gate"] .fg-wall      { width:clamp(390px,42vw,600px); }
   [data-fg="pathways"] .fg-sakura{ width:clamp(400px,46vw,660px); }
-  [data-fg="pathways"] .fg-leaves{ width:clamp(310px,35vw,500px); }
   [data-fg="lessons"] .fg-wall   { width:clamp(360px,45vw,640px); }
   [data-fg="eternity"] .fg-sakura{ width:clamp(260px,30vw,430px); }
 }
@@ -797,11 +747,10 @@ body[data-layout-footer="b"] .foot-base span:last-child{ text-align:right; }
      the call to action own the whole width here, so every duplicated piece
      of ornament goes and what stays is smaller */
   [data-fg="gate"] .fg-pine, [data-fg="pathways"] .fg-sakura,
-  [data-fg="pathways"] .fg-leaves, [data-fg="lessons"] .fg-wall,
+  [data-fg="lessons"] .fg-wall,
   [data-fg="eternity"] .fg-sakura, [data-fg="foot"] .fg-stones{ display:none; }
   [data-fg="gate"] .fg-wall     { left:-14%; bottom:-22px; width:min(82vw,440px); }
   [data-fg="gate"] .fg-grass    { left:auto; right:-10%; bottom:-76px; width:min(94vw,530px); }
-  [data-fg="pathways"] .fg-lantern{ left:-4%;   bottom:-58px; width:clamp(80px,20vw,128px); }
   [data-fg="pathways"] .fg-bush   { right:-10%; bottom:-38px; width:min(72vw,400px); }
   [data-fg="lessons"] .fg-stones  { left:-8%; bottom:-34px; width:min(66vw,360px); }
   [data-fg="lessons"] .fg-grass   { left:auto; right:-8%; bottom:-44px; width:min(70vw,380px); }
