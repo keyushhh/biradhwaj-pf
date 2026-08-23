@@ -1,6 +1,6 @@
 # Biradhwaj Senapati — portfolio
 
-My personal portfolio, hosted at [biradhwaj-pf.vercel.app](https://biradhwaj-pf.vercel.app).
+My personal portfolio, hosted at [biradhwaj.vercel.app](https://biradhwaj.vercel.app).
 
 It's a scroll-driven site built on a live WebGL scene: six chapters walking up
 a misty hillside at night. The camera moves as you scroll and drifts with the
