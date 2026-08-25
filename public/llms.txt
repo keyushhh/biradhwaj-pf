@@ -1,0 +1,30 @@
+# Biradhwaj Senapati — Senior Product Designer
+
+> Senior Product Designer specializing in B2B systems, complex product UX, design systems, and rapid prototyping.
+
+## Overview
+- **Name**: Biradhwaj Senapati
+- **Role**: Senior Product Designer at Wozku
+- **Experience**: 5+ years designing enterprise SaaS, CRM, billing, fintech, and design systems for 500K+ users.
+- **Location**: Remote / Hybrid
+- **Website**: https://biradhwaj.vercel.app/
+- **Contact**: biradhwajsenapati@gmail.com
+
+## Selected Work
+- **Grid.Pe**: Fintech doorstep cash withdrawal product (0 to 1 mobile design).
+- **eSIM CRM (Telna / Glowingbud)**: Enterprise SaaS platform for carrier-scale telecom eSIM operations.
+- **System Studio**: Design token and developer tools system (182 tokens, 18 primitives).
+- **Design System**: Scalable component foundations for digital experiences.
+
+## Core Capabilities
+- Product UX & Interaction Design (Figma, Framer)
+- Design Systems & Scalability (Tokens, React primitives)
+- Complex Flows & Dashboards (Enterprise SaaS, CRM, Billing)
+- Rapid Prototyping (Interactive web prototypes)
+- AI-Assisted Development (Code-adjacent handoff, frontend implementation)
+
+## Links
+- LinkedIn: https://www.linkedin.com/in/biradhwaj/
+- Behance: https://www.behance.net/biradhwaj
+- Dribbble: https://dribbble.com/biradhwaj
+- Résumé: https://drive.google.com/file/d/1vmCN-3V6yvaU9RH_SpEJwCxCOLiuTKEQ/view?usp=sharing
