@@ -1,0 +1,7 @@
+Sound effects by Kenney (kenney.nl) - CC0 1.0 Universal (public domain).
+No attribution required; kept here as a courtesy.
+
+click-soft.mp3   click / sticker pick / sticker drop
+knife-slice.mp3  cutting the clothesline
+maximize-004.mp3 cards falling / swoosh
+scratch-00{1,2,3}.mp3  blade scoring the mat (cycled, pitch-varied)
