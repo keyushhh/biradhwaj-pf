@@ -348,68 +348,129 @@ function initKnife() {
   if (!knife || !rope) return;
 
   const tipEl = $('.knife__tip', knife);
-  let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+  let dragging = false, hasMoved = false, sx = 0, sy = 0, ox = 0, oy = 0;
   let last = null, crossed = false, lastHiss = 0;
 
-  // the marker element is inside the rotated blade, so its rect already
-  // accounts for the rotation — no trigonometry needed here
   const tipOf = () => {
+    if (!tipEl) {
+      const r = knife.getBoundingClientRect();
+      return { x: r.left + r.width * 0.28, y: r.bottom };
+    }
     const r = tipEl.getBoundingClientRect();
     return { x: r.left, y: r.top };
   };
 
   const inRope = (p) => {
     const r = rope.getBoundingClientRect();
-    return p.x >= r.left && p.x <= r.right && p.y >= r.top - 8 && p.y <= r.bottom + 8;
+    const kr = knife.getBoundingClientRect();
+    const tipHit = p.x >= r.left && p.x <= r.right && p.y >= r.top - 16 && p.y <= r.bottom + 16;
+    const knifeHit = kr.left <= r.right && kr.right >= r.left && kr.top <= r.bottom + 10 && kr.bottom >= r.top - 10;
+    return tipHit || knifeHit;
   };
 
-  knife.addEventListener('pointerdown', e => {
-    dragging = true; crossed = false;
-    sx = e.clientX; sy = e.clientY; last = tipOf();
+  const triggerSliceCut = () => {
+    if (cutting) return;
+    knife.classList.remove('is-slicing');
+    void knife.offsetWidth; // reflow
+    knife.classList.add('is-slicing');
+
+    const r = rope.getBoundingClientRect();
+    const kr = knife.getBoundingClientRect();
+    cutLine(Math.max(r.left, kr.left - 180), kr.top + 10, Math.min(r.right, kr.right), kr.top + 24, true);
+
+    setTimeout(() => {
+      knife.classList.remove('is-slicing');
+    }, 600);
+  };
+
+  const onPointerDown = e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (cutting || knife.classList.contains('is-slicing')) return;
+    dragging = true;
+    hasMoved = false;
+    crossed = false;
+    sx = e.clientX;
+    sy = e.clientY;
+    last = tipOf();
     try { knife.setPointerCapture(e.pointerId); } catch {}
     knife.dataset.dragging = 'true';
+    knife.style.zIndex = '100';
     Sound.play('stickerPick');
-  });
+  };
 
-  knife.addEventListener('pointermove', e => {
+  const onPointerMove = e => {
     if (!dragging) return;
+    const dx = e.clientX - sx;
+    const dy = e.clientY - sy;
+    if (!hasMoved && Math.hypot(dx, dy) > 4) {
+      hasMoved = true;
+    }
+    if (!hasMoved) return;
+
     knife.style.transform =
-      `translate3d(${e.clientX - sx + ox}px, ${e.clientY - sy + oy}px, 0) rotate(24deg)`;
+      `translate3d(${dx + ox}px, ${dy + oy}px, 0) rotate(24deg)`;
 
     const tip = tipOf();
 
     // the blade scores the mat wherever it goes
     if (last && Math.hypot(tip.x - last.x, tip.y - last.y) > 5) {
       scratch(last.x, last.y, tip.x, tip.y);
-      // one hiss per ~110ms, or a fast drag machine-guns the speakers
       const now = performance.now();
       if (now - lastHiss > 110) { Sound.play('scratch'); lastHiss = now; }
       last = tip;
-    } else if (!last) last = tip;
+    } else if (!last) {
+      last = tip;
+    }
 
     if (!crossed && inRope(tip)) {
       crossed = true;
       const r = rope.getBoundingClientRect();
       cutLine(Math.max(r.left, tip.x - 160), tip.y - 6, Math.min(r.right, tip.x + 160), tip.y + 6);
     }
-  });
-
-  const end = e => {
-    if (!dragging) return;
-    dragging = false; crossed = false; last = null;
-    ox += e.clientX - sx; oy += e.clientY - sy;
-    delete knife.dataset.dragging;
-    Sound.play('stickerDrop');
   };
-  knife.addEventListener('pointerup', end);
-  knife.addEventListener('pointercancel', end);
+
+  const onPointerUp = e => {
+    if (!dragging) return;
+    dragging = false;
+    crossed = false;
+    last = null;
+    delete knife.dataset.dragging;
+    knife.style.zIndex = '';
+
+    if (!hasMoved) {
+      // Just a click / tap! Perform instant slice cut animation
+      triggerSliceCut();
+    } else {
+      ox += e.clientX - sx;
+      oy += e.clientY - sy;
+      Sound.play('stickerDrop');
+    }
+  };
+
+  knife.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove, { passive: true });
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', onPointerUp);
+
+  // click backup
+  knife.addEventListener('click', e => {
+    if (hasMoved) return;
+    triggerSliceCut();
+  });
 
   // keyboard equivalent, so the blade isn't pointer-only
   knife.addEventListener('keydown', e => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     e.preventDefault();
-    const r = rope.getBoundingClientRect();
-    cutLine(r.left + 40, r.top + 14, r.right - 40, r.top + 20, true);
+    triggerSliceCut();
+  });
+
+  // reset listener
+  knife.addEventListener('v2:reset', () => {
+    ox = 0; oy = 0;
+    knife.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1)';
+    knife.style.transform = 'translate3d(0, 0, 0) rotate(24deg)';
+    setTimeout(() => { knife.style.transition = ''; }, 450);
   });
 }
 
@@ -796,6 +857,7 @@ function initReset() {
     Sound.play('peel');
     $$('.cutout').forEach(el => el.dispatchEvent(new Event('v2:reset')));
     $('#ruler')?.dispatchEvent(new Event('v2:reset'));
+    $('#knife')?.dispatchEvent(new Event('v2:reset'));
   });
 }
 

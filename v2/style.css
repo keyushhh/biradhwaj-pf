@@ -361,7 +361,11 @@ main {
   flex-shrink: 0; width: fit-content;
   transform: rotate(-2deg);
 }
-.profile-photo .polaroid__img { aspect-ratio: 1; }
+.profile-photo .polaroid__img { aspect-ratio: 1; overflow: hidden; }
+.profile-photo .polaroid__img img {
+  transform: translate3d(-6px, 18px, 0) scale(1.26);
+  transform-origin: center center;
+}
 .profile-photo img { width: 4.5rem; height: 4.5rem; }
 @media (min-width: 640px) { .profile-photo img { width: 5.5rem; height: 5.5rem; } }
 @media (min-width: 1024px) {
