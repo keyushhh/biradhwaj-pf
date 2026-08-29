@@ -54,7 +54,7 @@ body[data-layout-hero="b"] .hero-side .v{
   aspect-ratio:4 / 5;
   background:
     linear-gradient(180deg, rgba(3,6,9,.02) 30%, rgba(3,6,9,.52) 100%),
-    url('../assets/work/portrait.jpg') center 22% / cover no-repeat;
+    url('../assets/work/portrait.webp') center 22% / cover no-repeat;
 }
 /* The caption held one short romanization beside one short gloss and could sit
    them on a baseline together. A name and a job title are each longer than
@@ -109,22 +109,22 @@ body[data-layout-gallery="b"] .card:not(:first-child) .card-fr{ min-height:120px
 .card:nth-child(1) .card-fr{
   background:
     linear-gradient(180deg,rgba(3,6,9,.04) 36%,rgba(3,6,9,.72) 100%),
-    url('../assets/work/gridpe.png') center / contain no-repeat;
+    url('../assets/work/gridpe.webp') center / contain no-repeat;
 }
 .card:nth-child(2) .card-fr{
   background:
     linear-gradient(180deg,rgba(3,6,9,.06) 36%,rgba(3,6,9,.74) 100%),
-    url('../assets/work/esim-crm.png') center / contain no-repeat;
+    url('../assets/work/esim-crm.webp') center / contain no-repeat;
 }
 .card:nth-child(3) .card-fr{
   background:
     linear-gradient(180deg,rgba(3,6,9,.05) 36%,rgba(3,6,9,.74) 100%),
-    url('../assets/work/design-system-studio.png') center / contain no-repeat;
+    url('../assets/work/design-system-studio.webp') center / contain no-repeat;
 }
 .card:nth-child(4) .card-fr{
   background:
     linear-gradient(180deg,rgba(3,6,9,.10) 30%,rgba(3,6,9,.78) 100%),
-    url('../assets/work/design-system.png') center / contain no-repeat;
+    url('../assets/work/design-system.webp') center / contain no-repeat;
 }
 
 /* The fallback replaced each still with a flat gradient, which is right when
@@ -133,24 +133,24 @@ body[data-layout-gallery="b"] .card:not(:first-child) .card-fr{ min-height:120px
    the plates survive the no-WebGL path. */
 .no-webgl .card:nth-child(1) .card-fr{
   background:linear-gradient(180deg,rgba(3,6,9,.04) 36%,rgba(3,6,9,.72) 100%),
-    url('../assets/work/gridpe.png') center / contain no-repeat;
+    url('../assets/work/gridpe.webp') center / contain no-repeat;
 }
 .no-webgl .card:nth-child(2) .card-fr{
   background:linear-gradient(180deg,rgba(3,6,9,.06) 36%,rgba(3,6,9,.74) 100%),
-    url('../assets/work/esim-crm.png') center / contain no-repeat;
+    url('../assets/work/esim-crm.webp') center / contain no-repeat;
 }
 .no-webgl .card:nth-child(3) .card-fr{
   background:linear-gradient(180deg,rgba(3,6,9,.05) 36%,rgba(3,6,9,.74) 100%),
-    url('../assets/work/design-system-studio.png') center / contain no-repeat;
+    url('../assets/work/design-system-studio.webp') center / contain no-repeat;
 }
 .no-webgl .card:nth-child(4) .card-fr{
   background:linear-gradient(180deg,rgba(3,6,9,.10) 30%,rgba(3,6,9,.78) 100%),
-    url('../assets/work/design-system.png') center / contain no-repeat;
+    url('../assets/work/design-system.webp') center / contain no-repeat;
 }
 .no-webgl .peek-fr{
   background:
     linear-gradient(180deg, rgba(3,6,9,.02) 30%, rgba(3,6,9,.52) 100%),
-    url('../assets/work/portrait.jpg') center 22% / cover no-repeat;
+    url('../assets/work/portrait.webp') center 22% / cover no-repeat;
 }
 
 /* ============================================================== skills

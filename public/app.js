@@ -15,28 +15,28 @@ const WORK = [
     kind: 'Fintech · 0→1',
     title: 'Grid.Pe',
     blurb: 'Doorstep cash withdrawal, taken from problem definition to a shipped mobile product.',
-    img: 'assets/work/gridpe.webp',
+    img: '/assets/work/gridpe.webp',
     links: [{ href: 'https://gridpe.framer.website/', label: 'Live site', icon: 'link' }]
   },
   {
     kind: 'Enterprise',
     title: 'eSIM CRM',
     blurb: 'Carrier-scale eSIM operations: CRM, billing and analytics made legible without losing the power.',
-    img: 'assets/work/esim-crm.webp',
+    img: '/assets/work/esim-crm.webp',
     links: [{ href: 'https://www.behance.net/gallery/243223895/Enterprise-CRM-for-Scalable-eSIM-Operations', label: 'Case study', icon: 'doc' }]
   },
   {
     kind: 'Dev tools',
     title: 'System Studio',
     blurb: '182 tokens, 18 primitives. A living token pipeline designers and engineers both read from.',
-    img: 'assets/work/design-system-studio.webp',
+    img: '/assets/work/design-system-studio.webp',
     links: [{ href: 'https://biradhwaj-design-tokens.vercel.app/', label: 'Live site', icon: 'link' }]
   },
   {
     kind: 'Systems',
     title: 'Design System',
     blurb: 'Components and foundations built to stay usable as the team and the surface area grew.',
-    img: 'assets/work/design-system.webp',
+    img: '/assets/work/design-system.webp',
     links: [{ href: 'https://www.behance.net/gallery/237864037/Design-System-for-Scalable-Digital-Experiences', label: 'Case study', icon: 'doc' }]
   }
 ];
@@ -69,7 +69,7 @@ const STICKERS = [
   /* --- Left Side (Experience area) --- */
   { id: 'field-notes', side: 'left', tip: 'ideas start on paper',
     style: 'top:2rem;left:max(-13.5rem, calc(-50vw + 50% + 1rem));width:6.8rem;z-index:2', rot: -6,
-    img: 'assets/stickers/field-notes.webp' },
+    img: '/assets/stickers/field-notes.webp' },
   { id: 'pantone', side: 'left', tip: 'obsessed with color accuracy',
     style: 'top:11rem;left:max(-15.8rem, calc(-50vw + 50% + 0.2rem));width:5rem;z-index:3', rot: 13,
     svg: `<svg viewBox="0 0 140 180"><rect x="6" y="6" width="128" height="168" rx="8" fill="#fcfbf9" stroke="#17221c" stroke-width="4"/><rect x="14" y="14" width="112" height="106" rx="4" fill="#002fa7"/><text x="18" y="138" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-weight="800" font-size="13" fill="#17221c" letter-spacing="0.5">PANTONE®</text><text x="18" y="153" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-weight="600" font-size="10" fill="#54615a">072 C</text></svg>` },
@@ -81,13 +81,13 @@ const STICKERS = [
     svg: `<svg viewBox="0 0 240 60"><rect x="4" y="6" width="232" height="48" rx="6" fill="#d4d8dd" stroke="#17221c" stroke-width="3.5"/><line x1="16" y1="8" x2="16" y2="28" stroke="#17221c" stroke-width="2.5"/><line x1="30" y1="8" x2="30" y2="18" stroke="#54615a" stroke-width="1.5"/><line x1="44" y1="8" x2="44" y2="22" stroke="#17221c" stroke-width="1.8"/><line x1="58" y1="8" x2="58" y2="18" stroke="#54615a" stroke-width="1.5"/><line x1="72" y1="8" x2="72" y2="28" stroke="#17221c" stroke-width="2.5"/><line x1="86" y1="8" x2="86" y2="18" stroke="#54615a" stroke-width="1.5"/><line x1="100" y1="8" x2="100" y2="22" stroke="#17221c" stroke-width="1.8"/><line x1="114" y1="8" x2="114" y2="18" stroke="#54615a" stroke-width="1.5"/><line x1="128" y1="8" x2="128" y2="28" stroke="#17221c" stroke-width="2.5"/><line x1="142" y1="8" x2="142" y2="18" stroke="#54615a" stroke-width="1.5"/><line x1="156" y1="8" x2="156" y2="22" stroke="#17221c" stroke-width="1.8"/><line x1="170" y1="8" x2="170" y2="18" stroke="#54615a" stroke-width="1.5"/><line x1="184" y1="8" x2="184" y2="28" stroke="#17221c" stroke-width="2.5"/><line x1="198" y1="8" x2="198" y2="18" stroke="#54615a" stroke-width="1.5"/><line x1="212" y1="8" x2="212" y2="22" stroke="#17221c" stroke-width="1.8"/><line x1="226" y1="8" x2="226" y2="28" stroke="#17221c" stroke-width="2.5"/><text x="16" y="42" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#17221c" text-anchor="middle">0</text><text x="72" y="42" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#17221c" text-anchor="middle">5</text><text x="128" y="42" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#17221c" text-anchor="middle">10</text><text x="184" y="42" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#17221c" text-anchor="middle">15</text><text x="226" y="42" font-family="ui-monospace, monospace" font-size="9" font-weight="700" fill="#54615a" text-anchor="middle">cm</text></svg>` },
   { id: 'macbook', side: 'left', tip: 'this is where the magic happens',
     style: 'top:36rem;left:max(-13.4rem, calc(-50vw + 50% + 0.6rem));width:8.6rem;z-index:3', rot: 7,
-    img: 'assets/stickers/macbook.webp' },
+    img: '/assets/stickers/macbook.webp' },
   { id: 'airpods', side: 'left', tip: 'literally cannot function without music',
     style: 'top:46.5rem;left:max(-15.6rem, calc(-50vw + 50% + 0.2rem));width:5.8rem;z-index:4', rot: -10,
-    img: 'assets/stickers/airpods.webp' },
+    img: '/assets/stickers/airpods.webp' },
   { id: 'diet-coke', side: 'left', tip: 'creative fuel',
     style: 'top:54.5rem;left:max(-11.2rem, calc(-50vw + 50% + 2.8rem));width:3.3rem;z-index:5', rot: -12,
-    img: 'assets/stickers/diet-coke.webp' },
+    img: '/assets/stickers/diet-coke.webp' },
   { id: 'wip-stamp', side: 'left', tip: 'perpetual work in progress',
     style: 'top:61.5rem;left:max(-14rem, calc(-50vw + 50% + 1.2rem));width:5.4rem;z-index:3', rot: -8,
     svg: `<svg viewBox="0 0 160 80"><g transform="rotate(-6 80 40)"><rect x="8" y="8" width="144" height="64" rx="8" fill="none" stroke="#ef4444" stroke-width="5" stroke-dasharray="144 4 20 4"/><rect x="14" y="14" width="132" height="52" rx="5" fill="#fef2f2" opacity="0.15"/><text x="80" y="49" font-family="Impact, Arial Black, sans-serif" font-size="26" font-weight="900" fill="#ef4444" text-anchor="middle" letter-spacing="3">WIP DRAFT</text></g></svg>` },
@@ -107,10 +107,10 @@ const STICKERS = [
     svg: `<svg viewBox="0 0 130 130"><polygon points="12,24 118,24 104,8 26,8" fill="#e4e4e7" stroke="#18181b" stroke-width="4"/><polygon points="118,24 126,110 114,124 104,8" fill="#d4d4d8" stroke="#18181b" stroke-width="4"/><polygon points="12,24 4,110 16,124 26,8" fill="#d4d4d8" stroke="#18181b" stroke-width="4"/><rect x="16" y="24" width="98" height="94" rx="14" fill="#f43f5e" stroke="#18181b" stroke-width="4"/><rect x="26" y="32" width="78" height="74" rx="10" fill="#fb7185"/><text x="65" y="76" font-family="ui-monospace, SFMono-Regular, monospace" font-size="20" font-weight="900" fill="#ffffff" text-anchor="middle">ESC</text></svg>` },
   { id: 'dunk-panda', side: 'right', tip: 'always a sneakerhead',
     style: 'bottom:-1rem;right:max(-16.2rem, calc(-50vw + 50% + 0.1rem));width:9rem;z-index:5', rot: -6,
-    img: 'assets/stickers/dunk-panda.webp' },
+    img: '/assets/stickers/dunk-panda.webp' },
   { id: 'mug', side: 'right', tip: 'i need more kawwwffeeee',
     style: 'bottom:-8.5rem;right:max(-10.8rem, calc(-50vw + 50% + 3.2rem));width:5.6rem;z-index:6', rot: 10,
-    img: 'assets/stickers/black-coffee.webp' }
+    img: '/assets/stickers/black-coffee.webp' }
 ];
 
 /* ------------------------------------------------ sound
@@ -119,7 +119,7 @@ const STICKERS = [
    Muted until you ask for it. */
 const Sound = (() => {
   const KEY = 'v2:sounds-muted';
-  const SFX = 'assets/sfx/';
+  const SFX = '/assets/sfx/';
 
   const CLICK = 'click-soft', SLICE = 'knife-slice', WHOOSH = 'maximize-004';
   const SCRATCH = ['scratch-001', 'scratch-002', 'scratch-003'];
